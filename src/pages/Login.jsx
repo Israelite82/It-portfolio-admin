@@ -1,31 +1,32 @@
+import { login } from "../lib/authservice";
 import { useState } from "react";
 
 export default function Login({ onLogin }) {
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [remember, setRemember] = useState(false);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!username.trim() || !password.trim()) {
-      setError("Please enter both username and password.");
-      return;
-    }
-    setLoading(true);
-    setError("");
-    setTimeout(() => {
-      if (username === "admin" && password === "admin1234") {
-        onLogin();
-      } else {
-        setError("Invalid credentials. Please try again.");
-        setLoading(false);
-      }
-    }, 900);
-  };
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (!email.trim() || !password.trim()) {
+    setError("Please enter both email and password.");
+    return;
+  }
+  setLoading(true);
+  setError("");
 
+  try {
+    await login(email, password);
+    onLogin();
+  } catch (err) {
+    setError(err || "Invalid credentials. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
   return (
     <div className="h-screen flex font-sans bg-[#1a1612] overflow-hidden">
       {/* ── LEFT PANEL ── */}
@@ -44,14 +45,23 @@ export default function Login({ onLogin }) {
           </div>
 
           {/* Title */}
-          <h1 className="font-serif text-6xl font-light text-[#f0e8d5] leading-tight mb-3">
-            Apostle
-            <br />
-            <span className="italic text-[#c5a355]">Osaren</span>
-          </h1>
-          <p className="text-[rgba(240,232,213,0.45)] text-xs tracking-[3px] uppercase font-light mb-12">
-            Evangelist · Author · Teacher
-          </p>
+        <h1 className="font-serif text-6xl font-light text-[#f0e8d5] leading-tight mb-3">
+  Apostle
+  <br />
+  <span
+    className="italic text-[#c5a355] animate-fade-loop"
+    style={{ animationDelay: "1.2s" }}
+  >
+    Osaren
+  </span>
+</h1>
+
+<p
+  className="text-[rgba(240,232,213,0.45)] text-xs tracking-[3px] uppercase font-light mb-12 animate-fade-loop"
+  style={{ animationDelay: "2.4s" }}
+>
+  Evangelist · Author · Teacher
+</p>
 
           {/* Divider */}
           <div className="w-12 h-px bg-gradient-to-r from-[#c5a355] to-transparent mb-8" />
@@ -143,23 +153,19 @@ export default function Login({ onLogin }) {
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
                   fill="currentColor"
-                  class="size-6"
+                  className="size-6"
                 >
-                  <path
-                    fill-rule="evenodd"
-                    d="M7.5 6a4.5 4.5 0 1 1 9 0 4.5 4.5 0 0 1-9 0ZM3.751 20.105a8.25 8.25 0 0 1 16.498 0 .75.75 0 0 1-.437.695A18.683 18.683 0 0 1 12 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 0 1-.437-.695Z"
-                    clip-rule="evenodd"
-                  />
+                  <path d="M1.5 8.67v8.58a3 3 0 0 0 3 3h15a3 3 0 0 0 3-3V8.67l-8.928 5.493a3 3 0 0 1-3.144 0L1.5 8.67Z" />
+                  <path d="M22.5 6.908V6.75a3 3 0 0 0-3-3h-15a3 3 0 0 0-3 3v.158l9.714 5.978a1.5 1.5 0 0 0 1.572 0L22.5 6.908Z" />
                 </svg>
-                Username
+                Email
               </label>
               <input
-                type="text"
-                placeholder="🙍 Enter your username"
-                value={username}
-                autoFocus
+                type="email"
+                placeholder="✉️ Enter your email"
+                value={email}
                 onChange={(e) => {
-                  setUsername(e.target.value);
+                  setEmail(e.target.value);
                   setError("");
                 }}
                 className={`w-full px-4 py-3.5 bg-white rounded-lg text-sm text-[#1a1612] placeholder-[#c0b8ae] outline-none transition-all duration-200

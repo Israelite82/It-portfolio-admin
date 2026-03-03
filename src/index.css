@@ -1,3 +1,31 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@keyframes fadeInUpLoop {
+  0% {
+    opacity: 0;
+    transform: translateY(35px);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 0.85;
+    transform: translateY(0);
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(35px);
+  }
+}
+
+.animate-fade-loop {
+  opacity: 0; /* start invisible */
+  animation: fadeInUpLoop 6s infinite ease-in-out;
+}
