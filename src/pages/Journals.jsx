@@ -1,6 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { journalsAPI, api } from "../lib/apiservice";
+import JournalList from "../components/Journals/JournalList";
+import JournalForm from "../components/Journals/JournalForm";
 
 export default function Journals() {
+  const [journals, setJournals] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [view, setView] = useState("list");
+  const [editingJournal, setEditingJournal] = useState(null);
+  const [journalFile, setJournalFile] = useState(null);
+  const [coverImage, setCoverImage] = useState(null);
+
   const [form, setForm] = useState({
     title: "",
     authors: "",
@@ -16,262 +26,200 @@ export default function Journals() {
     featureOnHomepage: false,
   });
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+  useEffect(() => {
+    fetchJournals();
+  }, []);
+
+  const fetchJournals = async () => {
+    try {
+      setLoading(true);
+      const response = await journalsAPI.getAll();
+      const journalsData = response.data.data?.data || response.data.data || response.data;
+      setJournals(Array.isArray(journalsData) ? journalsData : []);
+    } catch (error) {
+      console.error("Error fetching journals:", error);
+      setJournals([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const handleAdd = () => {
+    setForm({
+      title: "",
+      authors: "",
+      abstract: "",
+      keywords: "",
+      doi: "",
+      publicationYear: "",
+      volume: "",
+      issue: "",
+      citationFormat: "",
+      visibility: "",
+      researchCategory: "",
+      featureOnHomepage: false,
+    });
+    setEditingJournal(null);
+    setJournalFile(null);
+    setCoverImage(null);
+    setView("add");
+  };
+
+  const handleEdit = (journal) => {
+    setForm({
+      title: journal.title || "",
+      authors: journal.authors || "",
+      abstract: journal.abstract || journal.description || "",
+      keywords: journal.keywords || "",
+      doi: journal.doi || "",
+      publicationYear: journal.publication_year || "",
+      volume: journal.volume || "",
+      issue: journal.issue || "",
+      citationFormat: journal.citation_format || "",
+      visibility: journal.visibility || "",
+      researchCategory: journal.researchCategory || "",
+      featureOnHomepage: journal.feature_homepage || false,
+    });
+    setEditingJournal(journal);
+    setView("edit");
+  };
+
+  const handleSaveDraft = async () => {
+    setLoading(true);
+    try {
+      if (!form.title || (!journalFile && view === "add")) {
+        alert("Please fill in title and upload a journal file");
+        setLoading(false);
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("title", form.title);
+      formData.append("description", form.abstract);
+      formData.append("doi", form.doi);
+      formData.append("volume", form.volume);
+      formData.append("issue", form.issue);
+      formData.append("publication_year", form.publicationYear);
+      formData.append("citation_format", form.citationFormat);
+      formData.append("status", "draft");
+
+      if (journalFile) formData.append("journal_file", journalFile);
+      if (coverImage) formData.append("cover_image", coverImage);
+
+      if (view === "add") {
+        await journalsAPI.create(formData);
+        alert("Draft saved!");
+      } else {
+        await journalsAPI.update(editingJournal.id, formData);
+        alert("Draft updated!");
+      }
+
+      await fetchJournals();
+      setView("list");
+      setJournalFile(null);
+      setCoverImage(null);
+    } catch (error) {
+      console.error("Error saving draft:", error);
+      alert(error.response?.data?.message || "Failed to save draft");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+ const handlePublish = async () => {
+  setLoading(true);
+  try {
+    if (!form.title || (!journalFile && view === "add")) {
+      alert("Please fill in title and upload a journal file");
+      setLoading(false);
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("title", form.title);
+    formData.append("description", form.abstract);
+    formData.append("doi", form.doi);
+    formData.append("volume", form.volume);
+    formData.append("issue", form.issue);
+    formData.append("publication_year", form.publicationYear);
+    formData.append("citation_format", form.citationFormat);
+    formData.append("status", "published");
+
+    if (journalFile) formData.append("journal_file", journalFile);
+    if (coverImage) formData.append("cover_image", coverImage);
+
+    if (view === "add") {
+      await journalsAPI.create(formData);
+      alert("Journal published!");
+    } else {
+      // WORKAROUND: Add _method for Laravel
+      formData.append("_method", "PUT");
+      await api.post(`/journals/${editingJournal.id}`, formData);
+      alert("Journal updated!");
+    }
+
+    // Add delay before fetching to ensure Laravel has updated
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    await fetchJournals();
+    setView("list");
+    setJournalFile(null);
+    setCoverImage(null);
+  } catch (error) {
+    console.error("Error publishing journal:", error);
+    console.error("❌ Response:", error.response?.data);
+    alert(error.response?.data?.message || "Failed to publish journal");
+  } finally {
+    setLoading(false);
+  }
+};
+
+  const handleDelete = async (journalId) => {
+    if (!confirm("Delete this journal?")) return;
+    try {
+      await journalsAPI.delete(journalId);
+      alert("Journal deleted!");
+      await fetchJournals();
+    } catch (error) {
+      console.error("Error deleting journal:", error);
+      alert(error.response?.data?.message || "Failed to delete journal");
+    }
+  };
+
+  if (view === "add" || view === "edit") {
+    return (
+      <JournalForm
+        form={form}
+        onChange={handleChange}
+        onCancel={() => setView("list")}
+        onSaveDraft={handleSaveDraft}
+        onPublish={handlePublish}
+        loading={loading}
+        view={view}
+        editingJournal={editingJournal}
+        journalFile={journalFile}
+        setJournalFile={setJournalFile}
+        coverImage={coverImage}
+        setCoverImage={setCoverImage}
+      />
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
-
-      {/* ── TOP BAR ── */}
-      <div className="bg-white border-b border-gray-200 px-8 py-5">
-        <p className="text-[14px] text-gray-600 font-medium">
-          Journals{" "}
-          <span className="text-gray-400 mx-1">/</span>
-          <span className="text-[#1a1612] font-semibold">Add New</span>
-        </p>
-      </div>
-
-      {/* ── CONTENT ── */}
-      <div className="px-8 py-6">
-        <p className="text-sm font-semibold text-gray-800 tracking-tight uppercase mb-3">
-          Add New Journal Entry
-        </p>
-
-        <div className="flex gap-6 items-start">
-
-          {/* ── LEFT MAIN PANEL ── */}
-          <div className="flex-1">
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-8 py-6 space-y-5">
-
-              {/* Journal Title */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  Journal Title
-                </label>
-                <input
-                  type="text"
-                  name="title"
-                  value={form.title}
-                  onChange={handleChange}
-                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all"
-                />
-              </div>
-
-              {/* Author(s) */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  Author(s)
-                </label>
-                <input
-                  type="text"
-                  name="authors"
-                  value={form.authors}
-                  onChange={handleChange}
-                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all"
-                />
-              </div>
-
-              {/* Abstract */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  Abstract
-                </label>
-                <textarea
-                  name="abstract"
-                  value={form.abstract}
-                  onChange={handleChange}
-                  rows={6}
-                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all resize-none"
-                />
-              </div>
-
-              {/* Keywords */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  Keywords
-                </label>
-                <input
-                  type="text"
-                  name="keywords"
-                  value={form.keywords}
-                  onChange={handleChange}
-                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all"
-                />
-              </div>
-
-              {/* Publication Metadata */}
-              <div>
-                <p className="text-sm font-semibold text-gray-600 mb-5">
-                  Publication Metadata
-                </p>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs text-gray-600 font-medium mb-1.5">
-                      DOI
-                    </label>
-                    <input
-                      type="text"
-                      name="doi"
-                      value={form.doi}
-                      onChange={handleChange}
-                      className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-600 font-medium mb-1.5">
-                      Publication Year
-                    </label>
-                    <input
-                      type="text"
-                      name="publicationYear"
-                      value={form.publicationYear}
-                      onChange={handleChange}
-                      className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-600 font-medium mb-1.5">
-                      Volume
-                    </label>
-                    <input
-                      type="text"
-                      name="volume"
-                      value={form.volume}
-                      onChange={handleChange}
-                      className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-600 font-medium mb-1.5">
-                      Issue
-                    </label>
-                    <input
-                      type="text"
-                      name="issue"
-                      value={form.issue}
-                      onChange={handleChange}
-                      className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Citation Format */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  Citation Format
-                </label>
-                <textarea
-                  name="citationFormat"
-                  value={form.citationFormat}
-                  onChange={handleChange}
-                  rows={3}
-                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all resize-none"
-                />
-              </div>
-
-              {/* Journal File */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  Journal File
-                </label>
-                <div className="w-full h-[80px] mb-16 bg-[#E0E7FF]  rounded-lg flex items-center justify-center cursor-pointer hover:bg-[#dde0f5] transition-colors">
-                  <p className="text-sm text-[#0f0f11] font-medium">
-                    Upload PDF
-                  </p>
-                </div>
-              </div>
-
-            </div>
-          </div>
-
-          {/* ── RIGHT SIDEBAR ── */}
-          <div className="w-[200px] flex-shrink-0 space-y-5">
-
-            {/* Publish Card */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-5 py-5 space-y-4">
-              <p className="text-xs font-semibold text-gray-900 tracking-widest uppercase">
-                Publish
-              </p>
-
-              <button className="w-full py-2.5 rounded-lg text-sm font-semibold bg-[#DCFCE7] text-black hover:bg-green-200 transition-colors">
-                Save Draft
-              </button>
-
-              <button className="w-full py-2.5 rounded-lg text-sm font-semibold bg-[#6366F1] text-black hover:bg-[#6a5dbf] transition-colors">
-                Publish
-              </button>
-
-              {/* Visibility */}
-              <div>
-                <label className="block text-xs text-gray-500 font-medium mb-1.5">
-                  Visibility
-                </label>
-                <input
-                  type="text"
-                  name="visibility"
-                  value={form.visibility}
-                  onChange={handleChange}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] transition-all"
-                />
-              </div>
-
-              {/* Research Category */}
-              <div>
-                <label className="block text-xs text-gray-500 font-medium mb-1.5">
-                  Research Category
-                </label>
-                <textarea
-                  name="researchCategory"
-                  value={form.researchCategory}
-                  onChange={handleChange}
-                  rows={3}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] transition-all resize-none"
-                />
-              </div>
-
-              {/* Feature on Homepage */}
-              <div className="flex items-center justify-between pb-16">
-                <span className="text-xs text-gray-800 font-medium">
-                  Feature on Homepage
-                </span>
-                <button
-                  onClick={() =>
-                    setForm((prev) => ({
-                      ...prev,
-                      featureOnHomepage: !prev.featureOnHomepage,
-                    }))
-                  }
-                  className={`w-10 h-5 rounded-full transition-colors duration-200 relative ${
-                    form.featureOnHomepage ? "bg-blue-500" : "bg-gray-300"
-                  }`}
-                >
-                  <span
-                    className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all duration-200 ${
-                      form.featureOnHomepage ? "left-5" : "left-0.5"
-                    }`}
-                  />
-                </button>
-              </div>
-            </div>
-
-            {/* Cover Image Card */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-5 py-5">
-              <p className="text-xs font-semibold text-gray-800 tracking-widest uppercase mb-3">
-                Cover Image
-              </p>
-              <div className="w-full h-[160px] bg-[#FEF3C7]  rounded-lg flex items-center justify-center cursor-pointer hover:bg-[#fef3c7] transition-colors">
-                <p className="text-sm text-[#181716] font-medium">
-                  Upload Image
-                </p>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </div>
-    </div>
+    <JournalList
+      journals={journals}
+      loading={loading}
+      onEdit={handleEdit}
+      onDelete={handleDelete}
+      onAdd={handleAdd}
+    />
   );
 }

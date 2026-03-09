@@ -1,12 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { homepageAPI } from "../lib/apiService";
 
 export default function Homepage() {
-  const [headline, setHeadline] = useState("");
-  const [subtext, setSubtext] = useState("");
-  const [featuredTeaching, setFeaturedTeaching] = useState("");
-  const [featuredBlog, setFeaturedBlog] = useState("");
-  const [featuredBook, setFeaturedBook] = useState("");
-  const [journalSpotlight, setJournalSpotlight] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [heroImage, setHeroImage] = useState(null);
+  
+  const [form, setForm] = useState({
+    headline: "",
+    subtext: "",
+    overlayOpacity: "0.6",
+    textColor: "#ffffff",
+  });
+
+  const [featuredItems, setFeaturedItems] = useState({
+    featuredTeaching: "",
+    featuredBlog: "",
+    featuredBook: "",
+    journalSpotlight: "",
+  });
 
   const [visibility, setVisibility] = useState({
     Hero: true,
@@ -16,17 +27,126 @@ export default function Homepage() {
   });
 
   const [sections, setSections] = useState([
-    "Hero",
-    "Featured Teaching",
-    "Featured Blog",
-    "Featured Book",
-    "Journal Spotlight",
+    "hero",
+    "featured_teaching",
+    "featured_blog",
+    "featured_book",
+    "journal_spotlight",
   ]);
 
   const [dragIndex, setDragIndex] = useState(null);
 
-  const toggleVisibility = (key) => {
-    setVisibility((prev) => ({ ...prev, [key]: !prev[key] }));
+  // Fetch homepage data on load
+  useEffect(() => {
+    fetchHomepageData();
+  }, []);
+
+  const fetchHomepageData = async () => {
+    try {
+      setLoading(true);
+      const response = await homepageAPI.getAll();
+      const data = response.data.data || response.data;
+      
+      console.log("📄 Homepage data:", data);
+      
+      // Populate form with fetched data
+      if (data.hero) {
+        setForm({
+          headline: data.hero.headline || "",
+          subtext: data.hero.subtext || "",
+          overlayOpacity: data.hero.overlay_opacity || "0.6",
+          textColor: data.hero.text_color || "#ffffff",
+        });
+      }
+      
+      if (data.sections) {
+        setSections(data.sections);
+      }
+      
+      if (data.visibility) {
+        setVisibility(data.visibility);
+      }
+    } catch (error) {
+      console.error("Error fetching homepage data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFormChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleFeaturedChange = (e) => {
+    const { name, value } = e.target;
+    setFeaturedItems((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const toggleVisibility = async (key) => {
+    const sectionMap = {
+      Hero: "hero",
+      Teaching: "featured_teaching",
+      Blog: "featured_blog",
+      Books: "featured_book",
+    };
+    
+    try {
+      await homepageAPI.toggleSection(sectionMap[key]);
+      setVisibility((prev) => ({ ...prev, [key]: !prev[key] }));
+      alert(`${key} section visibility toggled!`);
+    } catch (error) {
+      console.error("Error toggling visibility:", error);
+      alert("Failed to toggle visibility");
+    }
+  };
+
+  const handlePublish = async () => {
+    setLoading(true);
+    try {
+      // Update hero section
+      const formData = new FormData();
+      formData.append("headline", form.headline);
+      formData.append("subtext", form.subtext);
+      formData.append("overlay_opacity", form.overlayOpacity);
+      formData.append("text_color", form.textColor);
+      
+      if (heroImage) {
+        formData.append("background_image", heroImage);
+      }
+      
+      await homepageAPI.updateHero(formData);
+      
+      // Update section order
+      await homepageAPI.updateSectionOrder(sections);
+      
+      alert("Homepage published successfully!");
+      await fetchHomepageData();
+    } catch (error) {
+      console.error("Error publishing homepage:", error);
+      alert(error.response?.data?.message || "Failed to publish homepage");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReset = async () => {
+    if (!confirm("Reset homepage to default settings?")) return;
+    
+    setForm({
+      headline: "",
+      subtext: "",
+      overlayOpacity: "0.6",
+      textColor: "#ffffff",
+    });
+    setSections([
+      "hero",
+      "featured_teaching",
+      "featured_blog",
+      "featured_book",
+      "journal_spotlight",
+    ]);
+    setHeroImage(null);
   };
 
   const handleDragStart = (index) => {
@@ -45,76 +165,106 @@ export default function Homepage() {
 
   const handleDragEnd = () => setDragIndex(null);
 
+  const sectionLabels = {
+    hero: "Hero",
+    featured_teaching: "Featured Teaching",
+    featured_blog: "Featured Blog",
+    featured_book: "Featured Book",
+    journal_spotlight: "Journal Spotlight",
+  };
+
+  const inputClass = "w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all";
+
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
-
-      {/* ── TOP BAR ── */}
+      {/* TOP BAR */}
       <div className="bg-white border-b border-gray-200 px-8 py-5">
         <p className="text-[15px] font-semibold text-[#1a1612]">
           Homepage Settings
         </p>
       </div>
 
-      {/* ── CONTENT ── */}
+      {/* CONTENT */}
       <div className="px-8 py-6">
         <p className="text-sm font-semibold text-gray-800 tracking-widest uppercase mb-5">
           Homepage Layout Manager
         </p>
 
         <div className="flex gap-6 items-start">
-
-          {/* ── LEFT MAIN PANEL ── */}
+          {/* LEFT MAIN PANEL */}
           <div className="flex-1 bg-white rounded-xl border border-gray-200 shadow-sm px-8 py-6 space-y-6">
-
             {/* Hero Section */}
             <div>
               <h3 className="text-sm font-semibold text-[#1a1612] mb-4">
                 Hero Section
               </h3>
 
-              {/* Headline */}
               <div className="mb-4">
-                <label className="block text-xs text-gray-9s00 font-medium mb-1.5">
+                <label className="block text-xs text-gray-900 font-medium mb-1.5">
                   Headline
                 </label>
                 <input
                   type="text"
-                  value={headline}
-                  onChange={(e) => setHeadline(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all"
+                  name="headline"
+                  value={form.headline}
+                  onChange={handleFormChange}
+                  className={inputClass}
                 />
               </div>
 
-              {/* Subtext */}
               <div className="mb-4">
                 <label className="block text-xs text-gray-900 font-medium mb-1.5">
                   Subtext
                 </label>
                 <textarea
-                  value={subtext}
-                  onChange={(e) => setSubtext(e.target.value)}
+                  name="subtext"
+                  value={form.subtext}
+                  onChange={handleFormChange}
                   rows={4}
-                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all resize-none"
+                  className={`${inputClass} resize-none`}
                 />
               </div>
 
-              {/* Hero Background Image */}
               <div>
                 <label className="block text-xs text-gray-900 font-medium mb-1.5">
                   Hero Background Image
                 </label>
-                <div className="w-full h-[120px] bg-[#e8eaf6] border border-[#c5c8e8] rounded-lg flex items-center justify-center cursor-pointer hover:bg-[#dde0f5] transition-colors">
-                  <div className="text-center">
-                    <svg className="w-8 h-8 text-[#7c7fc4] mx-auto mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      <rect x="3" y="3" width="18" height="18" rx="2"/>
-                      <circle cx="8.5" cy="8.5" r="1.5"/>
-                      <path d="M21 15l-5-5L5 21"/>
-                    </svg>
-                    <p className="text-xs text-[#7c7fc4] font-medium">
-                      Click to upload image
-                    </p>
-                  </div>
-                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setHeroImage(e.target.files[0])}
+                  className="hidden"
+                  id="heroImageInput"
+                />
+                <label
+                  htmlFor="heroImageInput"
+                  className="w-full h-[120px] bg-[#e8eaf6] border border-[#c5c8e8] rounded-lg flex items-center justify-center cursor-pointer hover:bg-[#dde0f5] transition-colors overflow-hidden"
+                >
+                  {heroImage ? (
+                    <img
+                      src={URL.createObjectURL(heroImage)}
+                      alt="Hero preview"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="text-center">
+                      <svg
+                        className="w-8 h-8 text-[#7c7fc4] mx-auto mb-2"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                      >
+                        <rect x="3" y="3" width="18" height="18" rx="2" />
+                        <circle cx="8.5" cy="8.5" r="1.5" />
+                        <path d="M21 15l-5-5L5 21" />
+                      </svg>
+                      <p className="text-xs text-[#7c7fc4] font-medium">
+                        Click to upload image
+                      </p>
+                    </div>
+                  )}
+                </label>
               </div>
             </div>
 
@@ -127,9 +277,11 @@ export default function Homepage() {
               </label>
               <input
                 type="text"
-                value={featuredTeaching}
-                onChange={(e) => setFeaturedTeaching(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all"
+                name="featuredTeaching"
+                value={featuredItems.featuredTeaching}
+                onChange={handleFeaturedChange}
+                placeholder="Enter teaching ID or title"
+                className={inputClass}
               />
             </div>
 
@@ -140,9 +292,11 @@ export default function Homepage() {
               </label>
               <input
                 type="text"
-                value={featuredBlog}
-                onChange={(e) => setFeaturedBlog(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all"
+                name="featuredBlog"
+                value={featuredItems.featuredBlog}
+                onChange={handleFeaturedChange}
+                placeholder="Enter blog post ID or title"
+                className={inputClass}
               />
             </div>
 
@@ -153,9 +307,11 @@ export default function Homepage() {
               </label>
               <input
                 type="text"
-                value={featuredBook}
-                onChange={(e) => setFeaturedBook(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all"
+                name="featuredBook"
+                value={featuredItems.featuredBook}
+                onChange={handleFeaturedChange}
+                placeholder="Enter book ID or title"
+                className={inputClass}
               />
             </div>
 
@@ -166,9 +322,11 @@ export default function Homepage() {
               </label>
               <input
                 type="text"
-                value={journalSpotlight}
-                onChange={(e) => setJournalSpotlight(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all"
+                name="journalSpotlight"
+                value={featuredItems.journalSpotlight}
+                onChange={handleFeaturedChange}
+                placeholder="Enter journal ID or title"
+                className={inputClass}
               />
             </div>
 
@@ -191,35 +349,48 @@ export default function Homepage() {
                       dragIndex === index ? "bg-blue-50" : "hover:bg-gray-100"
                     }`}
                   >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-600 flex-shrink-0">
-                      <line x1="3" y1="6" x2="21" y2="6"/>
-                      <line x1="3" y1="12" x2="21" y2="12"/>
-                      <line x1="3" y1="18" x2="21" y2="18"/>
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      className="text-gray-600 flex-shrink-0"
+                    >
+                      <line x1="3" y1="6" x2="21" y2="6" />
+                      <line x1="3" y1="12" x2="21" y2="12" />
+                      <line x1="3" y1="18" x2="21" y2="18" />
                     </svg>
-                    {section}
+                    {sectionLabels[section] || section}
                   </div>
                 ))}
               </div>
             </div>
-
           </div>
 
-          {/* ── RIGHT SIDEBAR ── */}
+          {/* RIGHT SIDEBAR */}
           <div className="w-[200px] flex-shrink-0 space-y-6">
-
             {/* Actions */}
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-5 py-5">
               <p className="text-xs font-semibold text-black tracking-widest uppercase mb-4">
                 Actions
               </p>
               <div className="space-y-2.5">
-                <button className="w-full py-2.5 rounded-lg text-sm font-semibold bg-[#DCFCE7] text-gray-700 hover:bg-green-200 transition-colors">
-                  Publish Homepage
+                <button
+                  onClick={handlePublish}
+                  disabled={loading}
+                  className="w-full py-2.5 rounded-lg text-sm font-semibold bg-[#DCFCE7] text-gray-700 hover:bg-green-200 transition-colors disabled:opacity-50"
+                >
+                  {loading ? "Publishing..." : "Publish Homepage"}
                 </button>
                 <button className="w-full py-2.5 rounded-lg text-sm font-semibold bg-[#E5E7EB] text-gray-700 hover:bg-gray-200 transition-colors">
                   Preview
                 </button>
-                <button className="w-full py-2.5 rounded-lg text-sm font-semibold bg-[#FECACA] text-gray-700 hover:bg-red-200 transition-colors">
+                <button
+                  onClick={handleReset}
+                  className="w-full py-2.5 rounded-lg text-sm font-semibold bg-[#FECACA] text-gray-700 hover:bg-red-200 transition-colors"
+                >
                   Reset to Default
                 </button>
               </div>
@@ -227,7 +398,7 @@ export default function Homepage() {
 
             {/* Section Visibility */}
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-5 py-5">
-              <p className="text-sm font-semibold text-black tracking-tight  mb-4">
+              <p className="text-sm font-semibold text-black tracking-tight mb-4">
                 Section Visibility
               </p>
               <div className="space-y-5">
@@ -250,7 +421,6 @@ export default function Homepage() {
                 ))}
               </div>
             </div>
-
           </div>
         </div>
       </div>

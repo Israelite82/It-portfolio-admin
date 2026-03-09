@@ -4,7 +4,7 @@ import { API_BASE_URL } from "./config";
 // Create axios instance with default config
 export const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000,
+  timeout: 60000, 
   headers: {
     Accept: "application/json",
   },
@@ -54,17 +54,18 @@ export const booksAPI = {
   getAll: () => api.get("/books"),
   getOne: (id) => api.get(`/books/${id}`),
   create: (data) => api.post("/books/create", data),
-  update: (id, data) => api.put(`/books/${id}`, data), 
+  update: (id, data) => api.post(`/books/${id}`, data), 
   delete: (id) => api.delete(`/books/${id}`),           
 };
 
 // ===== JOURNALS API =====
 export const journalsAPI = {
-  getAll: () => api.get("/api/journals"),
-  getOne: (id) => api.get(`/api/journals/${id}`),
-  create: (data) => api.post("/api/journals", data),
-  update: (id, data) => api.put(`/api/journals/${id}`, data),
-  delete: (id) => api.delete(`/api/journals/${id}`),
+  getAll: (params) => api.get("/journals", { params }), // Supports filters: page, per_page, status, year, search, sort_by, sort_order
+  getOne: (id) => api.get(`/journals/${id}`),
+  create: (data) => api.post("/journals", data),
+  update: (id, data) => api.put(`/journals/${id}`, data),
+  delete: (id) => api.delete(`/journals/${id}`),
+  restore: (id) => api.post(`/journals/${id}/restore`), // Restore deleted journal
 };
 
 // ===== TEACHINGS API =====
@@ -95,8 +96,26 @@ export const subscribersAPI = {
 
 // ===== HOMEPAGE API =====
 export const homepageAPI = {
-  get: () => api.get("/api/homepage"),
-  update: (data) => api.put("/api/homepage", data),
+  // Get all homepage data
+  getAll: () => api.get("/homepage"),
+  
+  // Update hero section
+  updateHero: (data) => api.put("/homepage/hero", data),
+  
+  // Delete hero background image
+  deleteHeroImage: () => api.delete("/homepage/hero/image"),
+  
+  // Update section order
+  updateSectionOrder: (sections) => api.put("/homepage/section-order", { sections }),
+  
+  // Toggle section visibility
+  toggleSection: (section) => api.patch(`/homepage/sections/${section}/toggle`),
+  
+  // Set featured item
+  setFeaturedItem: (data) => api.post("/homepage/featured-items", data),
+  
+  // Get featured items
+  getFeaturedItems: () => api.get("/homepage/featured-items"),
 };
 
 // ===== ANALYTICS API =====
