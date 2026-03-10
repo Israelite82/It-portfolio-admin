@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { journalsAPI, api } from "../lib/apiservice";
+import { journalsAPI, api } from "../lib/apiService";
 import JournalList from "../components/Journals/JournalList";
 import JournalForm from "../components/Journals/JournalForm";
 
