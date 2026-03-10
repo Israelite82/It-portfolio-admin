@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { homepageAPI } from "../lib/apiservice";
+import { homepageAPI } from "../lib/apiService";
 
 export default function Homepage() {
   const [loading, setLoading] = useState(false);
