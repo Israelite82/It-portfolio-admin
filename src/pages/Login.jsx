@@ -1,4 +1,4 @@
-import { login } from "../lib/authservice";
+import { login } from "../lib/authService";
 import { useState } from "react";
 
 export default function Login({ onLogin }) {
