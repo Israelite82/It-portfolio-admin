@@ -19,7 +19,7 @@ export default function JournalForm({
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
-      <div className="bg-white border-b border-gray-200 px-8 py-5">
+      <div className="bg-white border-b border-gray-200 px-4 sm:px-8 py-5">
         <p className="text-[14px] text-gray-600 font-medium">
           Journals{" "}
           <span className="text-gray-400 mx-1">/</span>
@@ -29,15 +29,15 @@ export default function JournalForm({
         </p>
       </div>
 
-      <div className="px-8 py-6">
+      <div className="px-4 sm:px-8 py-6">
         <p className="text-sm font-semibold text-gray-800 tracking-tight uppercase mb-3">
           {view === "add" ? "Add New Journal Entry" : `Edit: ${editingJournal?.title}`}
         </p>
 
-        <div className="flex gap-6 items-start">
+        <div className="flex flex-col lg:flex-row gap-6 items-start">
           {/* LEFT PANEL */}
-          <div className="flex-1">
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-8 py-6 space-y-5">
+          <div className="flex-1 w-full">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-4 sm:px-8 py-6 space-y-5">
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">
                   Journal Title
@@ -94,7 +94,7 @@ export default function JournalForm({
                 <p className="text-sm font-semibold text-gray-600 mb-5">
                   Publication Metadata
                 </p>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs text-gray-600 font-medium mb-1.5">
                       DOI
@@ -171,7 +171,7 @@ export default function JournalForm({
           </div>
 
           {/* RIGHT SIDEBAR */}
-          <div className="w-[200px] flex-shrink-0 space-y-5">
+          <div className="w-full lg:w-[240px] flex-shrink-0 space-y-5">
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-5 py-5 space-y-4">
               <p className="text-xs font-semibold text-gray-900 tracking-widest uppercase">
                 Publish
@@ -219,7 +219,7 @@ export default function JournalForm({
                 />
               </div>
 
-              <div className="flex items-center justify-between pb-16">
+              <div className="flex items-center justify-between pt-4">
                 <span className="text-xs text-gray-800 font-medium">
                   Feature on Homepage
                 </span>
