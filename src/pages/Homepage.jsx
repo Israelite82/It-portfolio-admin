@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { homepageAPI } from "../lib/apiService";
 
 export default function Homepage() {
@@ -36,43 +36,6 @@ export default function Homepage() {
 
   const [dragIndex, setDragIndex] = useState(null);
 
-  // Fetch homepage data on load
-  useEffect(() => {
-    fetchHomepageData();
-  }, []);
-
-  const fetchHomepageData = async () => {
-    try {
-      setLoading(true);
-      const response = await homepageAPI.getAll();
-      const data = response.data.data || response.data;
-      
-      console.log("📄 Homepage data:", data);
-      
-      // Populate form with fetched data
-      if (data.hero) {
-        setForm({
-          headline: data.hero.headline || "",
-          subtext: data.hero.subtext || "",
-          overlayOpacity: data.hero.overlay_opacity || "0.6",
-          textColor: data.hero.text_color || "#ffffff",
-        });
-      }
-      
-      if (data.sections) {
-        setSections(data.sections);
-      }
-      
-      if (data.visibility) {
-        setVisibility(data.visibility);
-      }
-    } catch (error) {
-      console.error("Error fetching homepage data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -102,35 +65,43 @@ export default function Homepage() {
   };
 
   const handlePublish = async () => {
-    setLoading(true);
-    try {
-      // Update hero section
-      const formData = new FormData();
-      formData.append("headline", form.headline);
-      formData.append("subtext", form.subtext);
-      formData.append("overlay_opacity", form.overlayOpacity);
-      formData.append("text_color", form.textColor);
-      
-      if (heroImage) {
-        formData.append("background_image", heroImage);
-      }
-      
-      await homepageAPI.updateHero(formData);
-      
-      // Update section order
-      await homepageAPI.updateSectionOrder(sections);
-      
-      alert("Homepage published successfully!");
-      await fetchHomepageData();
-    } catch (error) {
-      console.error("Error publishing homepage:", error);
-      alert(error.response?.data?.message || "Failed to publish homepage");
-    } finally {
-      setLoading(false);
-    }
-  };
+  setLoading(true);
+  try {
 
-  const handleReset = async () => {
+    console.log("📤 Form data BEFORE sending:", form);
+    console.log("📤 Hero image:", heroImage);
+    
+    const formData = new FormData();
+    formData.append("headline", form.headline);
+    formData.append("subtext", form.subtext);
+    formData.append("overlay_opacity", form.overlayOpacity);
+    formData.append("text_color", form.textColor);
+    
+    if (heroImage) {
+      formData.append("background_image", heroImage);
+    }
+    
+    
+    console.log("📤 Sending to API:");
+    for (let pair of formData.entries()) {
+      console.log(pair[0] + ': ' + pair[1]);
+    }
+    
+    await homepageAPI.updateHero(formData);
+    await homepageAPI.updateSectionOrder(sections);
+    
+    alert("Homepage published successfully!");
+  } catch (error) {
+    // 👇 RESPONSE PAYLOAD (what Laravel is SENDING BACK)
+    console.error("Error publishing homepage:", error);
+    console.error("❌ Response:", error.response?.data);
+    alert(error.response?.data?.message || "Failed to publish homepage");
+  } finally {
+    setLoading(false);
+  }
+};
+
+  const handleReset = () => {
     if (!confirm("Reset homepage to default settings?")) return;
     
     setForm({
@@ -178,21 +149,21 @@ export default function Homepage() {
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
       {/* TOP BAR */}
-      <div className="bg-white border-b border-gray-200 px-8 py-5">
+      <div className="bg-white border-b border-gray-200 px-4 sm:px-8 py-5">
         <p className="text-[15px] font-semibold text-[#1a1612]">
           Homepage Settings
         </p>
       </div>
 
       {/* CONTENT */}
-      <div className="px-8 py-6">
+      <div className="px-4 sm:px-8 py-6">
         <p className="text-sm font-semibold text-gray-800 tracking-widest uppercase mb-5">
           Homepage Layout Manager
         </p>
 
-        <div className="flex gap-6 items-start">
+        <div className="flex flex-col lg:flex-row gap-6 items-start">
           {/* LEFT MAIN PANEL */}
-          <div className="flex-1 bg-white rounded-xl border border-gray-200 shadow-sm px-8 py-6 space-y-6">
+          <div className="flex-1 w-full bg-white rounded-xl border border-gray-200 shadow-sm px-4 sm:px-8 py-6 space-y-6">
             {/* Hero Section */}
             <div>
               <h3 className="text-sm font-semibold text-[#1a1612] mb-4">
@@ -370,7 +341,7 @@ export default function Homepage() {
           </div>
 
           {/* RIGHT SIDEBAR */}
-          <div className="w-[200px] flex-shrink-0 space-y-6">
+          <div className="w-full lg:w-[240px] flex-shrink-0 space-y-6">
             {/* Actions */}
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-5 py-5">
               <p className="text-xs font-semibold text-black tracking-widest uppercase mb-4">

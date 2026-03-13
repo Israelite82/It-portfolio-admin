@@ -96,9 +96,6 @@ export const subscribersAPI = {
 
 // ===== HOMEPAGE API =====
 export const homepageAPI = {
-  // Get all homepage data
-  getAll: () => api.get("/homepage"),
-  
   // Update hero section
   updateHero: (data) => api.put("/homepage/hero", data),
   
