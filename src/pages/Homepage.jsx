@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { homepageAPI } from "../lib/apiService";
+import toast from "react-hot-toast";
 
 export default function Homepage() {
   const [loading, setLoading] = useState(false);
@@ -57,10 +58,10 @@ export default function Homepage() {
     try {
       await homepageAPI.toggleSection(sectionMap[key]);
       setVisibility((prev) => ({ ...prev, [key]: !prev[key] }));
-      alert(`${key} section visibility toggled!`);
+      toast.success(`${key} section visibility toggled!`);
     } catch (error) {
       console.error("Error toggling visibility:", error);
-      alert("Failed to toggle visibility");
+      toast.error("Failed to toggle visibility");
     }
   };
 
@@ -87,15 +88,15 @@ export default function Homepage() {
       console.log(pair[0] + ': ' + pair[1]);
     }
     
-    await homepageAPI.updateHero(formData);
+     await homepageAPI.updateHero(formData);
     await homepageAPI.updateSectionOrder(sections);
     
-    alert("Homepage published successfully!");
+    toast.success("Homepage published successfully!");
   } catch (error) {
     // 👇 RESPONSE PAYLOAD (what Laravel is SENDING BACK)
     console.error("Error publishing homepage:", error);
     console.error("❌ Response:", error.response?.data);
-    alert(error.response?.data?.message || "Failed to publish homepage");
+    toast.error(error.response?.data?.message || "Failed to publish homepage");
   } finally {
     setLoading(false);
   }

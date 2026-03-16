@@ -79,11 +79,11 @@ export const teachingsAPI = {
 
 // ===== BLOG API =====
 export const blogAPI = {
-  getAll: () => api.get("/api/blog"),
-  getOne: (id) => api.get(`/api/blog/${id}`),
-  create: (data) => api.post("/api/blog", data),
-  update: (id, data) => api.put(`/api/blog/${id}`, data),
-  delete: (id) => api.delete(`/api/blog/${id}`),
+  getAll: () => api.get("/blog-posts"),
+  getOne: (id) => api.get(`/blog-posts/${id}`),
+  create: (data) => api.post("/blog-posts", data),
+  update: (id, data) => api.post(`/blog-posts/${id}`, data),
+  delete: (id) => api.delete(`/blog-posts/${id}`),
 };
 
 // ===== SUBSCRIBERS API =====
@@ -97,13 +97,13 @@ export const subscribersAPI = {
 // ===== HOMEPAGE API =====
 export const homepageAPI = {
   // Update hero section
-  updateHero: (data) => api.put("/homepage/hero", data),
+  updateHero: (data) => api.post("/homepage/hero", data),
   
   // Delete hero background image
   deleteHeroImage: () => api.delete("/homepage/hero/image"),
   
   // Update section order
-  updateSectionOrder: (sections) => api.put("/homepage/section-order", { sections }),
+ updateSectionOrder: (sections) => api.post("/homepage/section-order", { sections }),
   
   // Toggle section visibility
   toggleSection: (section) => api.patch(`/homepage/sections/${section}/toggle`),

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { journalsAPI, api } from "../lib/apiService";
 import JournalList from "../components/Journals/JournalList";
 import JournalForm from "../components/Journals/JournalForm";
+import toast from "react-hot-toast";
 
 export default function Journals() {
   const [journals, setJournals] = useState([]);
@@ -96,7 +97,7 @@ export default function Journals() {
     setLoading(true);
     try {
       if (!form.title || (!journalFile && view === "add")) {
-        alert("Please fill in title and upload a journal file");
+        toast.error("Please fill in title and upload a journal file");
         setLoading(false);
         return;
       }
@@ -116,10 +117,10 @@ export default function Journals() {
 
       if (view === "add") {
         await journalsAPI.create(formData);
-        alert("Draft saved!");
+        toast.success("Draft saved!");
       } else {
         await journalsAPI.update(editingJournal.id, formData);
-        alert("Draft updated!");
+        toast.success("Draft updated!");
       }
 
       await fetchJournals();
@@ -128,7 +129,7 @@ export default function Journals() {
       setCoverImage(null);
     } catch (error) {
       console.error("Error saving draft:", error);
-      alert(error.response?.data?.message || "Failed to save draft");
+      toast.error(error.response?.data?.message || "Failed to save draft");
     } finally {
       setLoading(false);
     }
@@ -138,7 +139,7 @@ export default function Journals() {
   setLoading(true);
   try {
     if (!form.title || (!journalFile && view === "add")) {
-      alert("Please fill in title and upload a journal file");
+      toast.error("Please fill in title and upload a journal file");
       setLoading(false);
       return;
     }
@@ -163,7 +164,7 @@ export default function Journals() {
       // WORKAROUND: Add _method for Laravel
       formData.append("_method", "PUT");
       await api.post(`/journals/${editingJournal.id}`, formData);
-      alert("Journal updated!");
+      toast.success("Journal updated!");
     }
 
     // Add delay before fetching to ensure Laravel has updated
@@ -176,7 +177,7 @@ export default function Journals() {
   } catch (error) {
     console.error("Error publishing journal:", error);
     console.error("❌ Response:", error.response?.data);
-    alert(error.response?.data?.message || "Failed to publish journal");
+    toast.error(error.response?.data?.message || "Failed to publish journal");
   } finally {
     setLoading(false);
   }
@@ -186,11 +187,11 @@ export default function Journals() {
     if (!confirm("Delete this journal?")) return;
     try {
       await journalsAPI.delete(journalId);
-      alert("Journal deleted!");
+      toast.success("Journal deleted!");
       await fetchJournals();
     } catch (error) {
       console.error("Error deleting journal:", error);
-      alert(error.response?.data?.message || "Failed to delete journal");
+      toast.error(error.response?.data?.message || "Failed to delete journal");
     }
   };
 

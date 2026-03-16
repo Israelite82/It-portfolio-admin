@@ -1,261 +1,221 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
+import { blogAPI } from "../lib/apiService";
+import BlogList from "../components/blog/BlogList";
+import BlogForm from "../components/blog/BlogForm";
 
 export default function Blog() {
+  const [blogs, setBlogs] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [view, setView] = useState("list");
+  const [editingBlog, setEditingBlog] = useState(null);
+  const [featuredImage, setFeaturedImage] = useState(null);
+
   const [form, setForm] = useState({
     postTitle: "",
     excerpt: "",
     content: "",
     metaTitle: "",
     metaDescription: "",
-    schedule: "",
     author: "",
     categories: "",
     tags: "",
     featured: false,
   });
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+  useEffect(() => {
+    fetchBlogs();
+  }, []);
+
+  const fetchBlogs = async () => {
+    try {
+      setLoading(true);
+      const response = await blogAPI.getAll();
+      const blogsData = response.data.data?.data || response.data.data || response.data;
+      setBlogs(Array.isArray(blogsData) ? blogsData : []);
+    } catch (error) {
+      console.error("Error fetching blogs:", error);
+      setBlogs([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const inputClass = "w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all";
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const handleAdd = () => {
+    setForm({
+      postTitle: "",
+      excerpt: "",
+      content: "",
+      metaTitle: "",
+      metaDescription: "",
+      author: "",
+      categories: "",
+      tags: "",
+      featured: false,
+    });
+    setEditingBlog(null);
+    setFeaturedImage(null);
+    setView("add");
+  };
+
+  const handleEdit = (blog) => {
+    setForm({
+      postTitle: blog.post_title || "",
+      excerpt: blog.excerpt || "",
+      content: blog.content || "",
+      metaTitle: blog.meta_title || "",
+      metaDescription: blog.meta_description || "",
+      author: blog.author || "",
+      categories: Array.isArray(blog.categories) ? blog.categories.join(", ") : "",
+      tags: Array.isArray(blog.tags) ? blog.tags.join(", ") : "",
+      featured: blog.featured || false,
+    });
+    setEditingBlog(blog);
+    setView("edit");
+  };
+
+  const handleSaveDraft = async () => {
+    setLoading(true);
+    try {
+      if (!form.postTitle) {
+        toast.error("Please fill in the post title");
+        setLoading(false);
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("post_title", form.postTitle);
+      formData.append("excerpt", form.excerpt);
+      formData.append("content", form.content);
+      formData.append("meta_title", form.metaTitle);
+      formData.append("meta_description", form.metaDescription);
+      formData.append("author", form.author);
+      formData.append("status", "draft");
+      
+      // Convert categories and tags to arrays
+      const categoriesArray = form.categories.split(",").map(c => c.trim()).filter(Boolean);
+      const tagsArray = form.tags.split(",").map(t => t.trim()).filter(Boolean);
+      
+      formData.append("categories", JSON.stringify(categoriesArray));
+      formData.append("tags", JSON.stringify(tagsArray));
+      formData.append("featured", form.featured ? 1 : 0);
+      if (featuredImage) {
+        formData.append("featured_image", featuredImage);
+      }
+
+      if (view === "add") {
+        await blogAPI.create(formData);
+        toast.success("Draft saved!");
+      } else {
+        formData.append("_method", "PUT");
+        await blogAPI.update(editingBlog.id, formData);
+        toast.success("Draft updated!");
+      }
+
+      await fetchBlogs();
+      setView("list");
+      setFeaturedImage(null);
+    } catch (error) {
+      console.error("Error saving draft:", error);
+      toast.error(error.response?.data?.message || "Failed to save draft");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePublish = async () => {
+    setLoading(true);
+    try {
+      if (!form.postTitle) {
+        toast.error("Please fill in the post title");
+        setLoading(false);
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("post_title", form.postTitle);
+      formData.append("excerpt", form.excerpt);
+      formData.append("content", form.content);
+      formData.append("meta_title", form.metaTitle);
+      formData.append("meta_description", form.metaDescription);
+      formData.append("author", form.author);
+      formData.append("status", "published");
+      
+      const categoriesArray = form.categories.split(",").map(c => c.trim()).filter(Boolean);
+      const tagsArray = form.tags.split(",").map(t => t.trim()).filter(Boolean);
+      
+      formData.append("categories", JSON.stringify(categoriesArray));
+      formData.append("tags", JSON.stringify(tagsArray));
+       formData.append("featured", form.featured ? 1 : 0);
+      if (featuredImage) {
+        formData.append("featured_image", featuredImage);
+      }
+       
+      //use same endpoint for create and update, with _method override for PUT when editing
+      if (view === "add") {
+        await blogAPI.create(formData);
+        toast.success("Blog post published!");
+      } else {
+        formData.append("_method", "PUT");
+        await blogAPI.update(editingBlog.id, formData);
+        toast.success("Blog post updated!");
+      }
+
+      await fetchBlogs();
+      setView("list");
+      setFeaturedImage(null);
+    } catch (error) {
+      console.error("Error publishing blog:", error);
+      toast.error(error.response?.data?.message || "Failed to publish blog post");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (blogId) => {
+    if (!confirm("Delete this blog post?")) return;
+    try {
+      await blogAPI.delete(blogId);
+      toast.success("Blog post deleted!");
+      await fetchBlogs();
+    } catch (error) {
+      console.error("Error deleting blog:", error);
+      toast.error(error.response?.data?.message || "Failed to delete blog post");
+    }
+  };
+
+  if (view === "add" || view === "edit") {
+    return (
+      <BlogForm
+        form={form}
+        onChange={handleChange}
+        onCancel={() => setView("list")}
+        onSaveDraft={handleSaveDraft}
+        onPublish={handlePublish}
+        loading={loading}
+        view={view}
+        editingBlog={editingBlog}
+        featuredImage={featuredImage}
+        setFeaturedImage={setFeaturedImage}
+      />
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
-
-      {/* ── TOP BAR ── */}
-      <div className="bg-white border-b border-gray-200 px-8 py-5">
-        <p className="text-[13px] text-gray-600 font-medium">
-          Blog{" "}
-          <span className="text-gray-400 mx-1">/</span>
-          <span className="text-[#1a1612] font-semibold">Add New</span>
-        </p>
-      </div>
-
-      {/* ── CONTENT ── */}
-      <div className="px-8 py-6">
-        <p className="text-sm font-semibold text-gray-800 tracking-tight uppercase mb-4">
-          Add New Blog Post
-        </p>
-
-        <div className="flex gap-6 items-start">
-
-          {/* ── LEFT MAIN PANEL ── */}
-          <div className="flex-1 space-y-5">
-
-            {/* Main Card */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-8 py-6 space-y-5">
-
-              {/* Post Title */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  Post Title
-                </label>
-                <input
-                  type="text"
-                  name="postTitle"
-                  value={form.postTitle}
-                  onChange={handleChange}
-                  className={inputClass}
-                />
-              </div>
-
-              {/* Excerpt */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  Excerpt
-                </label>
-                <textarea
-                  name="excerpt"
-                  value={form.excerpt}
-                  onChange={handleChange}
-                  rows={4}
-                  className={`${inputClass} resize-none`}
-                />
-              </div>
-
-              {/* Content — Rich Text Editor */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  Content
-                </label>
-                <div className="border border-gray-200 rounded-lg overflow-hidden">
-                  {/* Toolbar */}
-                  <div className="flex items-center gap-2 px-4 py-2.5 bg-[#F1F5F9] border-b border-gray-300">
-                    {["Bold", "Italic", "Link", "Quote", "H2", "H3", "List"].map((tool) => (
-                      <button
-                        key={tool}
-                        type="button"
-                        className="text-xs text-gray-500 hover:text-[#1a1612] font-medium transition-colors"
-                      >
-                        {tool}
-                      </button>
-                    ))}
-                  </div>
-                  {/* Editor Area */}
-                  <textarea
-                    name="content"
-                    value={form.content}
-                    onChange={handleChange}
-                    rows={12}
-                    className="w-full px-4 py-3 text-sm text-gray-700 bg-white outline-none resize-none"
-                  />
-                </div>
-              </div>
-
-            </div>
-
-            {/* SEO Card */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-8 py-6 space-y-5 pb-16">
-              <p className="text-sm font-semibold text-gray-900 tracking-tight uppercase">
-                SEO Settings
-              </p>
-
-              {/* Meta Title */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  Meta Title
-                </label>
-                <input
-                  type="text"
-                  name="metaTitle"
-                  value={form.metaTitle}
-                  onChange={handleChange}
-                  className={inputClass}
-                />
-              </div>
-
-              {/* Meta Description */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  Meta Description
-                </label>
-                <textarea
-                  name="metaDescription"
-                  value={form.metaDescription}
-                  onChange={handleChange}
-                  rows={4}
-                  className={`${inputClass} resize-none`}
-                />
-              </div>
-            </div>
-
-          </div>
-
-          {/* ── RIGHT SIDEBAR ── */}
-          <div className="w-[200px] flex-shrink-0 space-y-5">
-
-            {/* Publish Card */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-5 py-5 space-y-4">
-              <p className="text-sm font-semibold text-gray-900 tracking-tight uppercase">
-                Publish
-              </p>
-
-              <button className="w-full py-2.5 rounded-lg text-sm font-semibold bg-[#DCFCE7] text-black hover:bg-green-200 transition-colors">
-                Save Draft
-              </button>
-
-              <button className="w-full py-2.5 rounded-lg text-sm font-semibold bg-[#6366F1] text-black hover:bg-[#6a5dbf] transition-colors">
-                Publish
-              </button>
-
-              {/* Schedule */}
-              <div>
-                <label className="block text-xs text-gray-600 font-medium mb-1.5">
-                  Schedule
-                </label>
-                <input
-                  type="text"
-                  name="schedule"
-                  value={form.schedule}
-                  onChange={handleChange}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] transition-all"
-                />
-              </div>
-
-              {/* Author */}
-              <div>
-                <label className="block text-xs text-gray-600 font-medium mb-1.5">
-                  Author
-                </label>
-                <input
-                  type="text"
-                  name="author"
-                  value={form.author}
-                  onChange={handleChange}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] transition-all"
-                />
-              </div>
-
-              {/* Categories */}
-              <div>
-                <label className="block text-xs text-gray-600 font-medium mb-1.5">
-                  Categories
-                </label>
-                <textarea
-                  name="categories"
-                  value={form.categories}
-                  onChange={handleChange}
-                  rows={3}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] transition-all resize-none"
-                />
-              </div>
-
-              {/* Tags */}
-              <div>
-                <label className="block text-xs text-gray-600 font-medium mb-1.5">
-                  Tags
-                </label>
-                <input
-                  type="text"
-                  name="tags"
-                  value={form.tags}
-                  onChange={handleChange}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] transition-all"
-                />
-              </div>
-
-              {/* Featured */}
-              <div className="flex items-center justify-between pb-16">
-                <span className="text-xs text-gray-600 font-medium">
-                  Featured
-                </span>
-                <button
-                  onClick={() =>
-                    setForm((prev) => ({
-                      ...prev,
-                      featured: !prev.featured,
-                    }))
-                  }
-                  className={`w-10 h-5 rounded-full transition-colors duration-200 relative ${
-                    form.featured ? "bg-blue-500" : "bg-gray-300"
-                  }`}
-                >
-                  <span
-                    className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all duration-200 ${
-                      form.featured ? "left-5" : "left-0.5"
-                    }`}
-                  />
-                </button>
-              </div>
-            </div>
-
-            {/* Featured Image Card */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-5 py-5 mt-4">
-              <p className="text-xs font-semibold text-gray-900 tracking-tight mb-3">
-                Featured Image
-              </p>
-              <div className="w-full h-[160px] bg-[#FEF3C7] border  rounded-lg flex items-center justify-center cursor-pointer hover:bg-[#fef3c7] transition-colors">
-                <p className="text-sm text-[#0c0b0b] font-medium">
-                  Upload Image
-                </p>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </div>
-    </div>
+    <BlogList
+      blogs={blogs}
+      loading={loading}
+      onEdit={handleEdit}
+      onDelete={handleDelete}
+      onAdd={handleAdd}
+    />
   );
 }

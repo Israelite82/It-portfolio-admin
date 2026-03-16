@@ -2,6 +2,7 @@ import { booksAPI } from "../lib/apiService";
 import { useState, useEffect } from "react";
 import BookList from "../components/books/BookList";
 import BookForm from "../components/books/BookForm";
+import toast from "react-hot-toast";
 
 export default function Books() {
   const [books, setBooks] = useState([]);
@@ -96,7 +97,7 @@ export default function Books() {
     setLoading(true);
     try {
      if (!form.title || (!bookFile && view === "add")) {
-  alert("Please fill in the title and upload a book file");
+  toast.error("Please fill in the title and upload a book file");
   setLoading(false);
   return;
 }
@@ -118,10 +119,10 @@ export default function Books() {
 
       if (view === "add") {
         await booksAPI.create(formData);
-        alert("Draft saved!");
+        toast.success("Draft saved!");
       } else {
         await booksAPI.update(editingBook.id, formData);
-        alert("Draft updated!");
+        toast.success("Draft updated!");
       }
 
       await fetchBooks();
@@ -130,7 +131,7 @@ export default function Books() {
       setBookCover(null);
     } catch (error) {
       console.error("Error saving draft:", error);
-      alert(error.response?.data?.message || "Failed to save draft");
+      toast.error(error.response?.data?.message || "Failed to save draft");
     } finally {
       setLoading(false);
     }
@@ -140,7 +141,7 @@ export default function Books() {
     setLoading(true);
     try {
      if (!form.title || (!bookFile && view === "add")) {
-  alert("Please fill in the title and upload a book file");
+  toast.error("Please fill in the title and upload a book file");
   setLoading(false);
   return;
 }
@@ -162,11 +163,11 @@ export default function Books() {
 
       if (view === "add") {
         await booksAPI.create(formData);
-        alert("Book published!");
+        toast.success("Book published!");
       } else {
         const res = await booksAPI.update(editingBook.id, formData);
         console.log("Update response:", res);
-        alert("Book updated!");
+        toast.success("Book updated!");
       }
 
       await fetchBooks();
@@ -175,7 +176,7 @@ export default function Books() {
       setBookCover(null);
     } catch (error) {
       console.error("Error publishing book:", error);
-      alert(error.response?.data?.message || "Failed to publish book");
+      toast.error(error.response?.data?.message || "Failed to publish book");
     } finally {
       setLoading(false);
     }
@@ -187,11 +188,11 @@ export default function Books() {
     }
     try {
       await booksAPI.delete(bookId);
-      alert("Book deleted successfully!");
+      toast.success("Book deleted successfully!");
       await fetchBooks();
     } catch (error) {
       console.error("Error deleting book:", error);
-      alert(error.response?.data?.message || "Failed to delete book");
+      toast.error(error.response?.data?.message || "Failed to delete book");
     }
   };
 
