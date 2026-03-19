@@ -70,11 +70,11 @@ export const journalsAPI = {
 
 // ===== TEACHINGS API =====
 export const teachingsAPI = {
-  getAll: () => api.get("/api/teachings"),
-  getOne: (id) => api.get(`/api/teachings/${id}`),
-  create: (data) => api.post("/api/teachings", data),
-  update: (id, data) => api.put(`/api/teachings/${id}`, data),
-  delete: (id) => api.delete(`/api/teachings/${id}`),
+  getAll: () => api.get("/teachings"),
+  getOne: (id) => api.get(`/teachings/${id}`),
+  create: (data) => api.post("/teachings", data),
+  update: (id, data) => api.post(`/teachings/${id}`, data),  
+  delete: (id) => api.delete(`/teachings/${id}`),
 };
 
 // ===== BLOG API =====

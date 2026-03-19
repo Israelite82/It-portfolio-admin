@@ -159,7 +159,7 @@ export default function Journals() {
 
     if (view === "add") {
       await journalsAPI.create(formData);
-      alert("Journal published!");
+      toast.success("Journal published!");
     } else {
       // WORKAROUND: Add _method for Laravel
       formData.append("_method", "PUT");

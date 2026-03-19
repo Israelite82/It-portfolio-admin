@@ -1,6 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
+import { teachingsAPI } from "../lib/apiService";
+import TeachingList from "../components/teachings/TeachingList";
+import TeachingForm from "../components/teachings/TeachingForm";
 
 export default function Teachings() {
+  const [teachings, setTeachings] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [view, setView] = useState("list");
+  const [editingTeaching, setEditingTeaching] = useState(null);
+  const [audioFile, setAudioFile] = useState(null);
+  const [thumbnail, setThumbnail] = useState(null);
+
   const [form, setForm] = useState({
     title: "",
     series: "",
@@ -10,253 +21,207 @@ export default function Teachings() {
     transcript: "",
     duration: "",
     tags: "",
-    schedule: "",
     seriesCategory: "",
     featured: false,
   });
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+  useEffect(() => {
+    fetchTeachings();
+  }, []);
+
+  const fetchTeachings = async () => {
+    try {
+      setLoading(true);
+      const response = await teachingsAPI.getAll();
+      const teachingsData = response.data.data?.data || response.data.data || response.data;
+      setTeachings(Array.isArray(teachingsData) ? teachingsData : []);
+    } catch (error) {
+      console.error("Error fetching teachings:", error);
+      setTeachings([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const handleAdd = () => {
+    setForm({
+      title: "",
+      series: "",
+      scriptureReference: "",
+      description: "",
+      videoEmbedUrl: "",
+      transcript: "",
+      duration: "",
+      tags: "",
+      seriesCategory: "",
+      featured: false,
+    });
+    setEditingTeaching(null);
+    setAudioFile(null);
+    setThumbnail(null);
+    setView("add");
+  };
+
+  const handleEdit = (teaching) => {
+    setForm({
+      title: teaching.teaching_title || "",
+      series: teaching.series || "",
+      scriptureReference: teaching.scripture_reference || "",
+      description: teaching.description || "",
+      videoEmbedUrl: teaching.video_embed_url || "",
+      transcript: teaching.transcript || "",
+      duration: teaching.duration || "",
+      tags: Array.isArray(teaching.tags) ? teaching.tags.join(", ") : "",
+      seriesCategory: teaching.series_category || "",
+      featured: teaching.featured || false,
+    });
+    setEditingTeaching(teaching);
+    setView("edit");
+  };
+
+  const handleSaveDraft = async () => {
+    setLoading(true);
+    try {
+      if (!form.title) {
+        toast.error("Please fill in the teaching title");
+        setLoading(false);
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("teaching_title", form.title);
+      formData.append("series", form.series);
+      formData.append("scripture_reference", form.scriptureReference);
+      formData.append("description", form.description);
+      formData.append("video_embed_url", form.videoEmbedUrl);
+      formData.append("transcript", form.transcript);
+      formData.append("duration", form.duration);
+      formData.append("series_category", form.seriesCategory);
+      formData.append("status", "draft");
+      
+      const tagsArray = form.tags.split(",").map(t => t.trim()).filter(Boolean);
+      formData.append("tags", JSON.stringify(tagsArray));
+      formData.append("featured", form.featured ? 1 : 0);
+
+      if (audioFile) formData.append("audio_file", audioFile);
+      if (thumbnail) formData.append("thumbnail", thumbnail);
+
+      if (view === "add") {
+        await teachingsAPI.create(formData);
+        toast.success("Draft saved!");
+      } else {
+        await teachingsAPI.update(editingTeaching.id, formData);
+        toast.success("Draft updated!");
+      }
+
+      await fetchTeachings();
+      setView("list");
+      setAudioFile(null);
+      setThumbnail(null);
+    } catch (error) {
+      console.error("Error saving draft:", error);
+      toast.error(error.response?.data?.message || "Failed to save draft");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePublish = async () => {
+    setLoading(true);
+    try {
+      if (!form.title) {
+        toast.error("Please fill in the teaching title");
+        setLoading(false);
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("teaching_title", form.title);
+      formData.append("series", form.series);
+      formData.append("scripture_reference", form.scriptureReference);
+      formData.append("description", form.description);
+      formData.append("video_embed_url", form.videoEmbedUrl);
+      formData.append("transcript", form.transcript);
+      formData.append("duration", form.duration);
+      formData.append("series_category", form.seriesCategory);
+      formData.append("status", "published");
+      
+      const tagsArray = form.tags.split(",").map(t => t.trim()).filter(Boolean);
+      formData.append("tags", JSON.stringify(tagsArray));
+      formData.append("featured", form.featured ? 1 : 0);
+
+      if (audioFile) formData.append("audio_file", audioFile);
+      if (thumbnail) formData.append("thumbnail", thumbnail);
+       
+     if (view === "add") {
+  console.log("📤 Creating teaching with POST /api/teachings");
+  await teachingsAPI.create(formData);
+  toast.success("Teaching published!");
+} else {
+  console.log("📤 Updating teaching with POST /api/teachings/" + editingTeaching.id);
+  formData.append("_method", "PUT");
+  await teachingsAPI.update(editingTeaching.id, formData);
+  toast.success("Teaching updated!");
+}
+
+      await fetchTeachings();
+      setView("list");
+      setAudioFile(null);
+      setThumbnail(null);
+    } catch (error) {
+      console.error("Error publishing teaching:", error);
+      toast.error(error.response?.data?.message || "Failed to publish teaching");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (teachingId) => {
+    if (!confirm("Delete this teaching?")) return;
+    try {
+      await teachingsAPI.delete(teachingId);
+      toast.success("Teaching deleted!");
+      await fetchTeachings();
+    } catch (error) {
+      console.error("Error deleting teaching:", error);
+      toast.error(error.response?.data?.message || "Failed to delete teaching");
+    }
+  };
+
+  if (view === "add" || view === "edit") {
+    return (
+      <TeachingForm
+        form={form}
+        onChange={handleChange}
+        onCancel={() => setView("list")}
+        onSaveDraft={handleSaveDraft}
+        onPublish={handlePublish}
+        loading={loading}
+        view={view}
+        editingTeaching={editingTeaching}
+        audioFile={audioFile}
+        setAudioFile={setAudioFile}
+        thumbnail={thumbnail}
+        setThumbnail={setThumbnail}
+      />
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
-
-      {/* ── TOP BAR ── */}
-      <div className="bg-white border-b border-gray-200 px-8 py-5">
-        <p className="text-[14px] text-gray-600 font-medium">
-          Teachings{" "}
-          <span className="text-gray-400 mx-1">/</span>
-          <span className="text-[#1a1612] font-semibold">Add New</span>
-        </p>
-      </div>
-
-      {/* ── CONTENT ── */}
-      <div className="px-8 py-6">
-        <p className="text-sm font-semibold text-gray-600 tracking-tight uppercase mb-4">
-          Add New Teaching
-        </p>
-
-        <div className="flex gap-6 items-start">
-
-          {/* ── LEFT MAIN PANEL ── */}
-          <div className="flex-1">
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-8 py-6 space-y-5">
-
-              {/* Teaching Title */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  Teaching Title
-                </label>
-                <input
-                  type="text"
-                  name="title"
-                  value={form.title}
-                  onChange={handleChange}
-                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all"
-                />
-              </div>
-
-              {/* Series */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  Series
-                </label>
-                <input
-                  type="text"
-                  name="series"
-                  value={form.series}
-                  onChange={handleChange}
-                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all"
-                />
-              </div>
-
-              {/* Scripture Reference */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  Scripture Reference
-                </label>
-                <input
-                  type="text"
-                  name="scriptureReference"
-                  value={form.scriptureReference}
-                  onChange={handleChange}
-                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all"
-                />
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  Description
-                </label>
-                <textarea
-                  name="description"
-                  value={form.description}
-                  onChange={handleChange}
-                  rows={5}
-                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all resize-none"
-                />
-              </div>
-
-              {/* Media */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  Media
-                </label>
-                <div className="w-full h-[80px] bg-[#e8eaf6] border border-[#E0E7FF] rounded-lg flex items-center justify-center cursor-pointer hover:bg-[#dde0f5] transition-colors">
-                  <p className="text-sm text-[#0f0f11] font-medium">
-                    Upload Audio (MP3)
-                  </p>
-                </div>
-              </div>
-
-              {/* Video Embed URL */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  Video Embed URL (YouTube/Vimeo)
-                </label>
-                <input
-                  type="text"
-                  name="videoEmbedUrl"
-                  value={form.videoEmbedUrl}
-                  onChange={handleChange}
-                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all"
-                />
-              </div>
-
-              {/* Transcript */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  Transcript
-                </label>
-                <textarea
-                  name="transcript"
-                  value={form.transcript}
-                  onChange={handleChange}
-                  rows={5}
-                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all resize-none"
-                />
-              </div>
-
-              {/* Duration */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  Duration
-                </label>
-                <input
-                  type="text"
-                  name="duration"
-                  value={form.duration}
-                  onChange={handleChange}
-                  className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all"
-                  style={{ maxWidth: "240px" }}
-                />
-              </div>
-
-              {/* Tags */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                  Tags
-                </label>
-                <input
-                  type="text"
-                  name="tags"
-                  value={form.tags}
-                  onChange={handleChange}
-                  className="w-full border mb-16 border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all"
-                />
-              </div>
-
-            </div>
-          </div>
-
-          {/* ── RIGHT SIDEBAR ── */}
-          <div className="w-[200px] flex-shrink-0 space-y-5">
-
-            {/* Publish Card */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-5 py-5 space-y-5">
-              <p className="text-xs font-semibold text-gray-500 tracking-widest uppercase">
-                Publish
-              </p>
-
-              <button className="w-full py-2.5 rounded-lg text-sm font-semibold bg-[#DCFCE7] text-black hover:bg-green-200 transition-colors">
-                Save Draft
-              </button>
-
-              <button className="w-full py-2.5 rounded-lg text-sm font-semibold bg-[#6366F1] text-black hover:bg-[#6a5dbf] transition-colors">
-                Publish
-              </button>
-
-              {/* Schedule */}
-              <div>
-                <label className="block text-xs text-gray-500 font-medium mb-1.5">
-                  Schedule
-                </label>
-                <input
-                  type="text"
-                  name="schedule"
-                  value={form.schedule}
-                  onChange={handleChange}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] transition-all"
-                />
-              </div>
-
-              {/* Featured */}
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-500 font-medium">
-                  Featured
-                </span>
-                <button
-                  onClick={() =>
-                    setForm((prev) => ({
-                      ...prev,
-                      featured: !prev.featured,
-                    }))
-                  }
-                  className={`w-10 h-5 rounded-full transition-colors duration-200 relative ${
-                    form.featured ? "bg-blue-500" : "bg-gray-300"
-                  }`}
-                >
-                  <span
-                    className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all duration-200 ${
-                      form.featured ? "left-5" : "left-0.5"
-                    }`}
-                  />
-                </button>
-              </div>
-
-              {/* Series Category */}
-              <div>
-                <label className="block text-xs text-gray-500 font-medium mb-1.5">
-                  Series Category
-                </label>
-                <textarea
-                  name="seriesCategory"
-                  value={form.seriesCategory}
-                  onChange={handleChange}
-                  rows={3}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] transition-all resize-none mb-16"
-                />
-              </div>
-            </div>
-
-            {/* Thumbnail Card */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-5 py-5">
-              <p className="text-xs font-semibold text-gray-500 tracking-widest uppercase mb-3">
-                Thumbnail
-              </p>
-              <div className="w-full h-[160px] bg-[#FEF3C7]  rounded-lg flex items-center justify-center cursor-pointer hover:bg-[#fef3c7] transition-colors">
-                <p className="text-sm text-[#0a0a09] font-medium">
-                  Upload Image
-                </p>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </div>
-    </div>
+    <TeachingList
+      teachings={teachings}
+      loading={loading}
+      onEdit={handleEdit}
+      onDelete={handleDelete}
+      onAdd={handleAdd}
+    />
   );
 }
