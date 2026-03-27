@@ -103,23 +103,25 @@ export default function Homepage() {
 };
 
   const handleReset = () => {
-    if (!confirm("Reset homepage to default settings?")) return;
-    
-    setForm({
-      headline: "",
-      subtext: "",
-      overlayOpacity: "0.6",
-      textColor: "#ffffff",
-    });
-    setSections([
-      "hero",
-      "featured_teaching",
-      "featured_blog",
-      "featured_book",
-      "journal_spotlight",
-    ]);
-    setHeroImage(null);
-  };
+  if (!window.confirm("Reset homepage to default settings?")) return;
+  
+  setForm({
+    headline: "",
+    subtext: "",
+    overlayOpacity: "0.6",
+    textColor: "#ffffff",
+  });
+  setSections([
+    "hero",
+    "featured_teaching",
+    "featured_blog",
+    "featured_book",
+    "journal_spotlight",
+  ]);
+  setHeroImage(null);
+  
+  toast.success("Homepage reset to default!"); 
+};
 
   const handleDragStart = (index) => {
     setDragIndex(index);
@@ -348,7 +350,7 @@ export default function Homepage() {
               <p className="text-xs font-semibold text-black tracking-widest uppercase mb-4">
                 Actions
               </p>
-              <div className="space-y-2.5">
+              <div className="space-y-3">
                 <button
                   onClick={handlePublish}
                   disabled={loading}
@@ -356,9 +358,7 @@ export default function Homepage() {
                 >
                   {loading ? "Publishing..." : "Publish Homepage"}
                 </button>
-                <button className="w-full py-2.5 rounded-lg text-sm font-semibold bg-[#E5E7EB] text-gray-700 hover:bg-gray-200 transition-colors">
-                  Preview
-                </button>
+          
                 <button
                   onClick={handleReset}
                   className="w-full py-2.5 rounded-lg text-sm font-semibold bg-[#FECACA] text-gray-700 hover:bg-red-200 transition-colors"
