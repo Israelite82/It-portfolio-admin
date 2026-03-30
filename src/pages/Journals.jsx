@@ -155,12 +155,17 @@ export default function Journals() {
     formData.append("status", "published");
 
     if (journalFile) formData.append("journal_file", journalFile);
+<<<<<<< HEAD
     if (coverImage) {
   console.log("📷 Cover Image:", coverImage);
   console.log("📷 File type:", coverImage.type);
   console.log("📷 File name:", coverImage.name);
   formData.append("cover_image", coverImage);
 }
+=======
+    if (coverImage) formData.append("cover_image", coverImage);
+
+>>>>>>> cbe6c9f4dc9379a4cdd10571e74f41fa39e12a85
     if (view === "add") {
       await journalsAPI.create(formData);
       toast.success("Journal published!");
