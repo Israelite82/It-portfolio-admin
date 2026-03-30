@@ -300,7 +300,7 @@ const handleSubmit = async (e) => {
           {/* Footer */}
           <div class="text-center mt-5">
             <a
-              href="https://it-portfolio-rose.vercel.app/"
+              href="https://it-portfolio-m43f.onrender.com/"
               class="inline-flex items-center text-sm text-gray-600 hover:text-[#C2933E]"
             >
               <svg
