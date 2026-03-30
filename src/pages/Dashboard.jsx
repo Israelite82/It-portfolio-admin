@@ -90,7 +90,7 @@ export default function Dashboard() {
         <div className="flex flex-col gap-5">
           {/* Recent Activity  */}
           <h2 className="text-sm font-semibold text-black tracking-widest uppercase">
-            Recent Activity
+            Recent Activities
           </h2>
           <div className="bg-white rounded-xl px-4 sm:px-6 py-5 shadow-lg">
             <div className="space-y-3">
