@@ -1,154 +1,287 @@
-import React from "react";
+import React, { useState } from "react";
+import toast from "react-hot-toast";
 
-export default function About() {
+function ImageUpload({ label, onImageChange, existingImage }) {
+  const [preview, setPreview] = useState(existingImage || null);
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setPreview(URL.createObjectURL(file));
+      onImageChange?.(file);
+    }
+  };
+
   return (
-    <div className="min-h-screen w-full bg-[#FFF5E1]">
-      {/* Hero Section */}
-      <section className="w-full bg-gradient-to-b from-[#071b34] to-[#06152b]">
-        <div className="max-w-7xl mx-auto min-h-[250px] md:h-[350px] px-4 md:px-6 py-12 md:py-0 relative overflow-hidden">
-          <div className="md:mt-20 max-w-3xl relative z-10">
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-semibold text-white mb-4">
-              About
-            </h1>
+    <div>
+      <label className="block text-xs text-gray-900 font-medium mb-1.5">{label}</label>
+      <input
+        type="file"
+        accept="image/*"
+        onChange={handleImageChange}
+        className="hidden"
+        id={label.replace(/\s/g, '')}
+      />
+      <label
+        htmlFor={label.replace(/\s/g, '')}
+        className="w-full h-[220px] bg-[#e8eaf6] border border-[#c5c8e8] rounded-lg flex items-center justify-center cursor-pointer hover:bg-[#dde0f5] transition-colors overflow-hidden"
+      >
+        {preview ? (
+          <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+        ) : (
+          <div className="text-center">
+            <svg className="w-8 h-8 text-[#7c7fc4] mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <path d="M21 15l-5-5L5 21" />
+            </svg>
+            <p className="text-xs text-[#7c7fc4] font-medium">Click to upload {label.toLowerCase()}</p>
           </div>
-          <div className="absolute left-1/2 -translate-x-1/2 top-[70%] md:left-auto md:right-0 md:top-1/2 md:-translate-y-[70%] md:translate-x-0 w-[200px] h-[120px] md:w-[340px] md:h-[200px] bg-gray-400/60 rounded-[50%]"></div>
-        </div>
-      </section>
+        )}
+      </label>
+    </div>
+  );
+}
 
-      {/* Dr. Osaren Emokpae - FULL WIDTH, Image RIGHT, Text LEFT */}
-      <div className="w-full">
-        <div className="flex flex-col md:flex-row w-full">
-          {/* Text Left */}
-          <div className="md:w-1/2 bg-white p-8 md:p-12">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-              Dr. Osaren Emokpae
-            </h1>
-            <p className="text-[#6B0F1A] text-lg mb-4">
-              A Development Economist
-            </p>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              Dr. Osaren Emokpae is a distinguished scholar, global apostle, serial investor, and an accomplished management and marketing consultant whose impact spans across academia, ministry, corporate leadership, and philanthropy. A man of uncommon insight, he brings together a rare blend of expertise in Development Economics, Theology, organizational leadership, production management, strategic planning, organizational performance management, and microfinance banking.
-            </p>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              He is the acclaimed author of The Pilgrims Testament, The Great Expectation and Minimum to Maximum, and co-author of Guilty or Not Guilty and The Glory in Stewardship. His extensive academic background includes pioneering research on the roles of banks in economic development and structural adjustment programs at the Universities of Lagos and Calabar. He further explored Human Resource Management and Organizational Resilience in Microfinance during his doctoral studies at the Universities of Century and Hertfordshire.
-            </p>
-            <p className="text-gray-700 leading-relaxed">
-              He is blissfully married to Imose Enoma Osar-Emokpae, a Linguist, Educationist, and Philanthropist. They are blessed with wonderful children and grandchildren.
-            </p>
-          </div>
-          {/* Image Right */}
-          <div className="md:w-1/2 bg-gray-300 flex items-center justify-center min-h-[500px]">
-            <div className="text-center">
-              <div className="w-32 h-32 bg-gray-400 rounded-full mx-auto mb-4"></div>
-              <p className="text-gray-600">Dr. Osaren Emokpae</p>
-            </div>
-          </div>
-        </div>
+export default function AboutPage() {
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({
+    headline: "",
+    subtitle: "",
+    brandStory: "",
+    mainContent: "",
+    additionalContent: ""
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      toast.success("Saved successfully!");
+    } catch (error) {
+      toast.error("Failed to save");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePublish = async () => {
+    setLoading(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      toast.success("Published successfully!");
+    } catch (error) {
+      toast.error("Failed to publish");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm("Are you sure you want to delete?")) return;
+    setLoading(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      toast.success("Deleted successfully!");
+      setForm({
+        headline: "", subtitle: "", brandStory: "", mainContent: "", additionalContent: ""
+      });
+    } catch (error) {
+      toast.error("Failed to delete");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const inputClass = "w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all";
+  const textareaClass = "w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all resize-none";
+
+  return (
+    <div className="min-h-screen bg-gray-50 font-sans">
+      {/* TOP BAR */}
+      <div className="bg-white border-b border-gray-200 px-4 sm:px-8 py-5">
+        <p className="text-[15px] font-semibold text-[#1a1612]">
+          About Page Setting
+        </p>
       </div>
 
-      {/* Biography Card - text only, card style */}
-      <div className="w-full px-4 md:px-12 py-12">
-        <div className="bg-white rounded-xl shadow-lg p-6 md:p-10 max-w-6xl mx-auto">
-          <p className="text-gray-700 leading-relaxed">
-            {/* Biography text here - appears to be same as above or additional? */}
-          </p>
-        </div>
-      </div>
-
-      {/* Academic Biography - Two columns, Academic Profile on RIGHT */}
-      <div className="w-full px-4 md:px-12 py-12">
-        <div className="bg-white rounded-xl shadow-lg p-6 md:p-10 max-w-6xl mx-auto">
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6">Academic Biography</h2>
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Left - Publications */}
+      {/* CONTENT */}
+      <div className="px-4 sm:px-8 py-6">
+        <div className="flex flex-col lg:flex-row gap-6 items-start">
+          {/* LEFT MAIN PANEL */}
+          <div className="flex-1 w-full bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-6 pb-16">
+            {/* About Hero Section */}
             <div>
-              <h3 className="font-semibold text-[#6B0F1A] text-lg mb-3">Publications</h3>
-              <ul className="list-disc list-inside text-gray-700 space-y-1">
-                <li>PhD in Organizational Resilience in Microfinance</li>
-                <li>University of Hertfordshire</li>
-              </ul>
+              <p className="text-sm font-semibold text-gray-900 mb-4">
+                About Hero Section
+              </p>
+              <label className="block text-xs text-gray-600 font-medium mb-1.5">
+                Headline
+              </label>
+              <textarea
+                name="headline"
+                value={form.headline}
+                onChange={handleChange}
+                rows={4}
+                placeholder="Heading text here"
+                className={textareaClass}
+              />
             </div>
-            {/* Right - Academic Profile */}
+
+            {/* Subtitle */}
             <div>
-              <h3 className="font-semibold text-[#6B0F1A] text-lg mb-3">Academic Profile</h3>
-              <p className="text-gray-700">PhD in Human Resource Management</p>
-              <p className="text-gray-700">University of Century</p>
+              <label className="block text-xs text-gray-600 font-medium mb-1.5">
+                Subtitle
+              </label>
+              <textarea
+                name="subtitle"
+                value={form.subtitle}
+                onChange={handleChange}
+                rows={6}
+                placeholder="Enter subtitle"
+                className={textareaClass}
+              />
+            </div>
+
+            {/* Hero background Image */}
+            <ImageUpload label="Hero background Image" />
+
+            {/* Brand Story */}
+            <div>
+              <label className="block text-xs text-gray-600 font-medium mb-1.5">
+                Brand Story
+              </label>
+              <textarea
+                name="brandStory"
+                value={form.brandStory}
+                onChange={handleChange}
+                rows={6}
+                placeholder="Brand story here..."
+                className={textareaClass}
+              />
+            </div>
+
+             {/* Academic Biography */}
+            <div>
+              <label className="block text-xs text-gray-600 font-medium mb-1.5">
+                Academic Biography
+              </label>
+              <textarea
+                name="academicBiography"
+                value={form.academicBiography}
+                onChange={handleChange}
+                rows={6}
+                placeholder="Academic biography here..."
+                className={textareaClass}
+              />
+            </div>
+
+             {/* Apostle Osaren Emokpae */}
+            <div>
+              <label className="block text-xs text-gray-600 font-medium mb-1.5">
+                Apostle Osaren Emokpae
+              </label>
+              <textarea
+                name="apostleBiography"
+                value={form.apostleBiography}
+                onChange={handleChange}
+                rows={6}
+                placeholder="Apostle biography here..."
+                className={textareaClass}
+              />
+            </div>
+
+            {/* Apostle Osaren Emokpae Image */}
+            <ImageUpload label="Apostle Osaren Emokpae Image" />
+
+            {/* Main Content with Toolbar */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                Main Content
+              </label>
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-[#F1F5F9] border-b border-gray-300">
+                  {["Bold", "Italic", "Link", "Quote", "H2", "H3", "List"].map((tool) => (
+                    <button
+                      key={tool}
+                      type="button"
+                      className="text-xs text-gray-500 hover:text-[#1a1612] font-medium transition-colors"
+                    >
+                      {tool}
+                    </button>
+                  ))}
+                </div>
+                <textarea
+                  name="mainContent"
+                  value={form.mainContent}
+                  onChange={handleChange}
+                  rows={18}
+                  className="w-full px-4 py-3 text-sm text-gray-700 bg-white outline-none resize-none"
+                  placeholder="Enter main content here..."
+                />
+              </div>
+            </div>
+
+            {/* Additional Content with Toolbar */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                Additional Content
+              </label>
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-2.5 bg-[#F1F5F9] border-b border-gray-300">
+                  {["Bold", "Italic", "Link", "Quote", "H2", "H3", "List"].map((tool) => (
+                    <button
+                      key={tool}
+                      type="button"
+                      className="text-xs text-gray-500 hover:text-[#1a1612] font-medium transition-colors"
+                    >
+                      {tool}
+                    </button>
+                  ))}
+                </div>
+                <textarea
+                  name="additionalContent"
+                  value={form.additionalContent}
+                  onChange={handleChange}
+                  rows={15}
+                  className="w-full px-4 py-3 text-sm text-gray-700 bg-white outline-none resize-none"
+                  placeholder="Enter additional content here..."
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT SIDEBAR - Actions */}
+          <div className="w-full lg:w-[240px] flex-shrink-0 space-y-6  ">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 pb-16">
+              <p className="text-xs font-semibold text-black tracking-widest uppercase mb-4">
+                Actions
+              </p>
+              <div className="space-y-10">
+               
+                <button
+                  onClick={handlePublish}
+                  disabled={loading}
+                  className="w-full py-8 rounded-lg text-sm font-semibold bg-[#DCFCE7] text-gray-700 hover:bg-green-200 transition-colors disabled:opacity-50"
+                >
+                  {loading ? "Publishing..." : "Publish"}
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={loading}
+                  className="w-full py-8 rounded-lg text-sm font-semibold bg-[#FECACA] text-gray-700 hover:bg-red-200 transition-colors disabled:opacity-50"
+                >
+                  {loading ? "Resetting..." : "Reset to Default"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Apostle Osaren Emokpae - FULL WIDTH, Image RIGHT, Text LEFT */}
-      <div className="w-full">
-        <div className="flex flex-col md:flex-row w-full">
-          {/* Text Left */}
-          <div className="md:w-1/2 bg-white p-8 md:p-12">
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">Apostle. Osaren Emokpae</h2>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              A National Leader/General Overseer Emeritus of Foursquare Gospel Church Trinidad & Tobago and Guyana, Executive Counsellor Emeritus of Foursquare Nigeria, Dr. Emokpae now serves as the President and Presiding Apostle of Macedonia Call Global Assembly—a ministry with a powerful global vision.
-            </p>
-            <p className="text-gray-700 leading-relaxed">
-              The vision for Macedonia Call Global Assembly was birthed in his heart in 2008 while in Brixton, United Kingdom, within the Foursquare movement, and was later incorporated at The Summit in Columbia, USA. What began as a divine revelation has since grown into an independent global ministry committed to accelerating the discipling of nations in preparation for the return of our Savior.
-            </p>
-          </div>
-          {/* Image Right */}
-          <div className="md:w-1/2 bg-gray-300 flex items-center justify-center min-h-[400px]">
-            <div className="text-center">
-              <div className="w-32 h-32 bg-gray-400 rounded-full mx-auto mb-4"></div>
-              <p className="text-gray-600">Apostle Osaren Emokpae</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Mission Section - Two columns */}
-      <div className="w-full px-4 md:px-12 py-12">
-        <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
-          <div className="bg-white rounded-xl shadow-lg p-6 md:p-8">
-            <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4">Mission Statement</h2>
-            <p className="text-gray-700 leading-relaxed">
-              A National Leader/General Overseer Emeritus of Foursquare Gospel Church Trinidad & Tobago and Guyana, Executive Counsellor Emeritus of Foursquare Nigeria, Dr. Emokpae now serves as the President and Presiding Apostle of Macedonia Call Global Assembly—a ministry with a powerful global vision.
-            </p>
-          </div>
-          <div className="bg-white rounded-xl shadow-lg p-6 md:p-8">
-            <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4">Vision Statement</h2>
-            <p className="text-gray-700 leading-relaxed">
-              The vision for Macedonia Call Global Assembly was birthed in his heart in 2008 while in Brixton, United Kingdom, within the Foursquare movement, and was later incorporated at The Summit in Columbia, USA. What began as a divine revelation has since grown into an independent global ministry committed to accelerating the discipling of nations in preparation for the return of our Savior.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* A Track Record of Excellence */}
-      <div className="w-full px-4 md:px-12 py-12">
-        <div className="bg-white rounded-xl shadow-lg p-6 md:p-10 max-w-6xl mx-auto">
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6">A Track Record of Excellence In The Market</h2>
-          <div className="text-gray-700 leading-relaxed space-y-4">
-            <p>Dr. Osaren Emokpae is a transformational force in Nigeria's marketing and communication landscape—recognized not just for his achievements, but for the institutions, people, and ideas he has helped build.</p>
-            <p>His career spans major milestones, beginning with his role as Senior Brand Manager at Unilever, then Nigeria's largest multinational. He went on to serve as Secretary of the National Institute of Marketing, where he contributed to raising professional standards nationwide.</p>
-            <p>A pioneer at heart, Dr. Emokpae coordinated the birth of the media independent practice in Nigeria and became the founding President of the Media Independent Practitioners Association of Nigeria (MPIAN). He also co-visited Media Planning Services (MPS) with George Thorpe—a research-driven initiative that strengthened accurate media planning and buying across the country.</p>
-            <p>His leadership extended into corporate governance as a member of the Institute of Directors and as an Executive Director at Insight Communications and the Troyka Group. He later founded the Mindshare Group—Mindshare Communications and Mindshare Datatech—driving innovation across marketing, data, and strategy.</p>
-            <p>Dr. Emokpae also made a defining impact in private broadcasting. He led teams that reshaped modern television in Nigeria, consulting for pioneers such as BDN and Silverbird Television, and supporting strategic projects—including enabling Alt to purchase OB Vans for the 1999 World Junior Football Championship.</p>
-            <p>A builder of people and institutions, he founded Philip Business School, which evolved into the Ed-John Institute of Management and Technology—an NTBE-accredited institution producing globally competitive graduates. He also established the Ed-John College of Theology and Leadership Studies to nurture strong, ethical Christian leaders.</p>
-            <p>Beyond marketing and education, Dr. Emokpae played a strategic role in advancing private security in Nigeria. He helped birth Halogen Security and founded Concorde Security and Omecom Security—organisations that today employ over 5,000 personnel. Through the Havilah Group, his enterprises collectively support over 7,000 employees nationwide.</p>
-            <p>Across every sector he touches, Dr. Osaren Emokpae stands out as a visionary nation-builder—raising leaders, shaping industries, and leaving behind institutions that continue to impact lives.</p>
-            <p>Dr. Emokpae served as Chairman of LAPO NGO and leads the Rhema Global Foundation. He is also a board member at McPherson University, Havilah Open Door, and the Institute of Leadership and Future Studies, where he teaches Organizational Leadership. He is the Founder of the ED-John Institute of Management and Technology, where he helps young people and professionals develop practical skills in ICT, Robotics, AI, Business, and Entrepreneurship. Over the years, he has also founded and led several impactful organizations, including Mindshare Group, Concorde Security and Protocol Services (UK), Concorde Express, and the Philips School of Fullology and Leadership Research.</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Top Skills */}
-      <div className="w-full px-4 md:px-12 py-12 pb-20">
-        <div className="bg-white rounded-xl shadow-lg p-6 md:p-10 max-w-6xl mx-auto">
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6">Top Skills</h2>
-          <div className="flex flex-wrap gap-3">
-            <span className="bg-[#6B0F1A]/10 text-[#6B0F1A] px-4 py-2 rounded-full text-sm font-medium">Mentoring</span>
-            <span className="bg-[#6B0F1A]/10 text-[#6B0F1A] px-4 py-2 rounded-full text-sm font-medium">Strategic planning</span>
-            <span className="bg-[#6B0F1A]/10 text-[#6B0F1A] px-4 py-2 rounded-full text-sm font-medium">Christian Leadership</span>
-            <span className="bg-[#6B0F1A]/10 text-[#6B0F1A] px-4 py-2 rounded-full text-sm font-medium">Economic Development</span>
-            <span className="bg-[#6B0F1A]/10 text-[#6B0F1A] px-4 py-2 rounded-full text-sm font-medium">Managing Organisational Performance</span>
-          </div>
-        </div>s
       </div>
     </div>
   );
