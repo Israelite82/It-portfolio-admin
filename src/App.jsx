@@ -5,6 +5,7 @@ import Login from "./pages/Login";
 import AdminLayout from "./components/Adminlayout";
 import Dashboard from "./pages/Dashboard";
 import Homepage from "./pages/Homepage";
+import About from "./pages/About";  
 import Books from "./pages/Books";
 import Journals from "./pages/Journals";
 import Teachings from "./pages/Teachings";
@@ -75,6 +76,7 @@ export default function App() {
         >
           <Route index element={<Dashboard />} />
           <Route path="homepage" element={<Homepage />} />
+          <Route path="about" element={<About />} />  
           <Route path="books" element={<Books />} />
           <Route path="journals" element={<Journals />} />
           <Route path="teachings" element={<Teachings />} />

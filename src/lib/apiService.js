@@ -47,7 +47,20 @@ api.interceptors.response.use(
     }
     return Promise.reject(error);
   }
-);
+); 
+    // ===== ABOUT API =====
+export const aboutAPI = {
+  getAbout: () => api.get('/about'),
+  updateAbout: (data) => {
+    // If data has files, use FormData
+    if (data instanceof FormData) {
+      return api.post('/about', data, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    }
+    return api.post('/about', data);
+  }
+};
 
 // ===== BOOKS API =====
 export const booksAPI = {
