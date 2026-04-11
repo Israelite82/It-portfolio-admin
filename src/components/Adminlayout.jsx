@@ -16,6 +16,13 @@ const navItems = [
       <img src="/home-icon.png" alt="Homepage Icon" className="w-5 h-5 transition-opacity duration-150" />
     ),
   },
+   {
+    path: "/about",
+    label: "About",
+    icon: (
+      <img src="/about-icon.png" alt="About Icon" className="w-5 h-5 transition-opacity duration-150" />
+    ),
+  },
   {
     path: "/books",
     label: "Books",
