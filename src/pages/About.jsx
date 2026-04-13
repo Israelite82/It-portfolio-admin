@@ -1,6 +1,156 @@
 import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Image from '@tiptap/extension-image';
+import Placeholder from '@tiptap/extension-placeholder';
 import { aboutAPI } from "../lib/apiService";
+
+// Menu Bar component for rich text formatting
+const MenuBar = ({ editor }) => {
+  if (!editor) {
+    return null;
+  }
+
+  return (
+    <div className="border-b border-gray-200 p-2 flex flex-wrap gap-1 bg-gray-50">
+      <button
+        onClick={() => editor.chain().focus().toggleBold().run()}
+        className={`p-1.5 rounded text-sm ${
+          editor.isActive('bold') ? 'bg-gray-200 text-gray-900' : 'text-gray-600 hover:bg-gray-100'
+        }`}
+        title="Bold"
+      >
+        <strong>B</strong>
+      </button>
+      <button
+        onClick={() => editor.chain().focus().toggleItalic().run()}
+        className={`p-1.5 rounded text-sm ${
+          editor.isActive('italic') ? 'bg-gray-200 text-gray-900' : 'text-gray-600 hover:bg-gray-100'
+        }`}
+        title="Italic"
+      >
+        <em>I</em>
+      </button>
+      <button
+        onClick={() => editor.chain().focus().toggleStrike().run()}
+        className={`p-1.5 rounded text-sm ${
+          editor.isActive('strike') ? 'bg-gray-200 text-gray-900' : 'text-gray-600 hover:bg-gray-100'
+        }`}
+        title="Strike"
+      >
+        <s>S</s>
+      </button>
+      <button
+        onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+        className={`p-1.5 rounded text-sm ${
+          editor.isActive('heading', { level: 2 }) ? 'bg-gray-200 text-gray-900' : 'text-gray-600 hover:bg-gray-100'
+        }`}
+        title="Heading 2"
+      >
+        H2
+      </button>
+      <button
+        onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+        className={`p-1.5 rounded text-sm ${
+          editor.isActive('heading', { level: 3 }) ? 'bg-gray-200 text-gray-900' : 'text-gray-600 hover:bg-gray-100'
+        }`}
+        title="Heading 3"
+      >
+        H3
+      </button>
+      <button
+        onClick={() => editor.chain().focus().toggleBulletList().run()}
+        className={`p-1.5 rounded text-sm ${
+          editor.isActive('bulletList') ? 'bg-gray-200 text-gray-900' : 'text-gray-600 hover:bg-gray-100'
+        }`}
+        title="Bullet List"
+      >
+        • List
+      </button>
+      <button
+        onClick={() => editor.chain().focus().toggleOrderedList().run()}
+        className={`p-1.5 rounded text-sm ${
+          editor.isActive('orderedList') ? 'bg-gray-200 text-gray-900' : 'text-gray-600 hover:bg-gray-100'
+        }`}
+        title="Numbered List"
+      >
+        1. List
+      </button>
+      <button
+        onClick={() => editor.chain().focus().toggleBlockquote().run()}
+        className={`p-1.5 rounded text-sm ${
+          editor.isActive('blockquote') ? 'bg-gray-200 text-gray-900' : 'text-gray-600 hover:bg-gray-100'
+        }`}
+        title="Quote"
+      >
+        " Quote
+      </button>
+      <button
+        onClick={() => editor.chain().focus().setHorizontalRule().run()}
+        className="p-1.5 rounded text-sm text-gray-600 hover:bg-gray-100"
+        title="Divider"
+      >
+        —
+      </button>
+      <button
+        onClick={() => editor.chain().focus().undo().run()}
+        className="p-1.5 rounded text-sm text-gray-600 hover:bg-gray-100"
+        title="Undo"
+      >
+        ↶
+      </button>
+      <button
+        onClick={() => editor.chain().focus().redo().run()}
+        className="p-1.5 rounded text-sm text-gray-600 hover:bg-gray-100"
+        title="Redo"
+      >
+        ↷
+      </button>
+    </div>
+  );
+};
+
+// Rich Text Editor component using TipTap
+const RichTextEditor = ({ value, onChange, placeholder, height = 300 }) => {
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Image,
+      Placeholder.configure({
+        placeholder: placeholder || 'Write your content here...',
+      }),
+    ],
+    content: value || '',
+    onUpdate: ({ editor }) => {
+      const html = editor.getHTML();
+      onChange(html);
+    },
+    editorProps: {
+      attributes: {
+        class: 'prose prose-sm max-w-none focus:outline-none min-h-[200px] p-4',
+      },
+    },
+  });
+
+  // Update editor content when value changes externally
+  useEffect(() => {
+    if (editor && value !== editor.getHTML()) {
+      editor.commands.setContent(value || '');
+    }
+  }, [value, editor]);
+
+  return (
+    <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+      <MenuBar editor={editor} />
+      <EditorContent 
+        editor={editor} 
+        style={{ minHeight: `${height}px` }}
+        className="rich-text-editor"
+      />
+    </div>
+  );
+};
 
 function ImageUpload({ label, onImageChange, existingImage }) {
   const [preview, setPreview] = useState(existingImage || null);
@@ -12,6 +162,8 @@ function ImageUpload({ label, onImageChange, existingImage }) {
       onImageChange?.(file);
     }
   };
+
+
 
   return (
     <div>
@@ -28,7 +180,7 @@ function ImageUpload({ label, onImageChange, existingImage }) {
         className="w-full h-[220px] bg-[#e8eaf6] border border-[#c5c8e8] rounded-lg flex items-center justify-center cursor-pointer hover:bg-[#dde0f5] transition-colors overflow-hidden"
       >
         {preview ? (
-          <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+          <img src={`https://api.osarenemokpae.com/storage/${preview}`} alt="Preview" className="w-full h-full object-cover" />
         ) : (
           <div className="text-center">
             <svg className="w-8 h-8 text-[#7c7fc4] mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -49,13 +201,16 @@ export default function AboutPage() {
   const [fetching, setFetching] = useState(true);
   
   const [form, setForm] = useState({
-    headline: "",
-    subtitle: "",
-    brandStory: "",
-    academicBiography: "",
-    apostleBiography: "",
-    mainContent: "",
-    additionalContent: ""
+    hero_headline: "",
+    hero_subtext: "",
+    hero_button_text: "",
+    hero_button_link: "",
+    apostle_name: "",
+    academic_biography: "",
+    mission_statement_1: "",
+    mission_statement_2: "",
+    track_record_title: "",
+    track_record_description: ""
   });
 
   const [heroImage, setHeroImage] = useState(null);
@@ -72,17 +227,20 @@ export default function AboutPage() {
         
         if (data) {
           setForm({
-            headline: data.hero_headline || "",
-            subtitle: data.hero_subtext || "",
-            brandStory: data.brand_story || "",
-            academicBiography: data.academic_biography || "",
-            apostleBiography: data.apostle_content || "",
-            mainContent: data.track_record_content || "",
-            additionalContent: data.additional_content || ""
+            hero_headline: data.hero_section?.headline || "",
+            hero_subtext: data.hero_section?.subtext || "",
+            hero_button_text: data.hero_section?.button?.text || "",
+            hero_button_link: data.hero_section?.button?.link || "",
+            apostle_name: data.brand_story?.apostle?.name || "",
+            academic_biography: data.brand_story?.academic_biography || "",
+            mission_statement_1: data.missions?.mission_statement_1 || "",
+            mission_statement_2: data.missions?.mission_statement_2 || "",
+            track_record_title: data.missions?.track_record?.title || "",
+            track_record_description: data.missions?.track_record?.description || ""
           });
           
-          setExistingHeroImage(data.hero_background_image || "");
-          setExistingApostleImage(data.apostle_image || "");
+          setExistingHeroImage(data.hero_section?.background_image_path || "");
+          setExistingApostleImage(data.brand_story?.apostle?.image_path || "");
         }
       } catch (error) {
         console.error("Error fetching about data:", error);
@@ -95,61 +253,68 @@ export default function AboutPage() {
     fetchAboutData();
   }, []);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+  const handleChange = (field, value) => {
+    setForm(prev => ({ ...prev, [field]: value }));
   };
 
   const handlePublish = async () => {
-  setLoading(true);
-  try {
-    const formData = new FormData();
-    
-    formData.append("hero_headline", form.headline);
-    formData.append("hero_subtext", form.subtitle);
-    formData.append("brand_story", form.brandStory);
-    formData.append("academic_biography", form.academicBiography);
-    
-    // Fix: Send apostle content correctly
-    formData.append("apostle_content", form.apostleBiography);
-    
-    // Fix: Send track record content correctly  
-    formData.append("track_record_content", form.mainContent);
-    
-    if (form.additionalContent) {
-      formData.append("additional_content", form.additionalContent);
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      
+      formData.append("hero_headline", form.hero_headline);
+      formData.append("hero_subtext", form.hero_subtext);
+      formData.append("hero_button_text", form.hero_button_text);
+      formData.append("hero_button_link", form.hero_button_link);
+      formData.append("apostle_name", form.apostle_name);
+      formData.append("academic_biography", form.academic_biography);
+      formData.append("mission_statement_1", form.mission_statement_1);
+      formData.append("mission_statement_2", form.mission_statement_2);
+      formData.append("track_record_title", form.track_record_title);
+      formData.append("track_record_description", form.track_record_description);
+      
+      if (heroImage) {
+        formData.append("hero_background_image", heroImage);
+      }
+      if (apostleImage) {
+        formData.append("apostle_image", apostleImage);
+      }
+      
+      await aboutAPI.updateAbout(formData);
+      toast.success("About page published successfully!");
+      
+      // Refresh data
+      const response = await aboutAPI.getAbout();
+      const data = response.data.data || response.data;
+      
+      if (data) {
+        setForm({
+          hero_headline: data.hero_section?.headline || "",
+          hero_subtext: data.hero_section?.subtext || "",
+          hero_button_text: data.hero_section?.button?.text || "",
+          hero_button_link: data.hero_section?.button?.link || "",
+          apostle_name: data.brand_story?.apostle?.name || "",
+          academic_biography: data.brand_story?.academic_biography || "",
+          mission_statement_1: data.missions?.mission_statement_1 || "",
+          mission_statement_2: data.missions?.mission_statement_2 || "",
+          track_record_title: data.missions?.track_record?.title || "",
+          track_record_description: data.missions?.track_record?.description || ""
+        });
+        
+        setExistingHeroImage(data.hero_section?.background_image_path || "");
+        setExistingApostleImage(data.brand_story?.apostle?.image_path || "");
+      }
+      
+      setHeroImage(null);
+      setApostleImage(null);
+      
+    } catch (error) {
+      console.error("Error publishing about:", error);
+      toast.error(error.response?.data?.message || "Failed to publish about page");
+    } finally {
+      setLoading(false);
     }
-    
-    if (heroImage) {
-      formData.append("hero_background_image", heroImage);
-    }
-    if (apostleImage) {
-      formData.append("apostle_image", apostleImage);
-    }
-    
-    // Log what you're sending
-    console.log("Sending apostle_content:", form.apostleBiography);
-    console.log("Sending track_record_content:", form.mainContent);
-    
-    await aboutAPI.updateAbout(formData);
-    
-    toast.success("About page published successfully!");
-    
-    // Refresh after publish
-    const response = await aboutAPI.getAbout();
-    const data = response.data.data || response.data;
-    
-    console.log("After publish - Apostle:", data.brand_story?.apostle);
-    console.log("After publish - Track record:", data.missions?.track_record);
-    
-    // ... rest of refresh code
-  } catch (error) {
-    console.error("Error publishing about:", error);
-    toast.error(error.response?.data?.message || "Failed to publish about page");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const handleReset = async () => {
     if (!window.confirm("Reset about page to default settings?")) return;
@@ -159,21 +324,28 @@ export default function AboutPage() {
       const formData = new FormData();
       formData.append("hero_headline", "");
       formData.append("hero_subtext", "");
-      formData.append("brand_story", "");
+      formData.append("hero_button_text", "");
+      formData.append("hero_button_link", "");
+      formData.append("apostle_name", "");
       formData.append("academic_biography", "");
-      formData.append("apostle_content", "");
-      formData.append("track_record_content", "");
+      formData.append("mission_statement_1", "");
+      formData.append("mission_statement_2", "");
+      formData.append("track_record_title", "");
+      formData.append("track_record_description", "");
       
       await aboutAPI.updateAbout(formData);
       
       setForm({
-        headline: "",
-        subtitle: "",
-        brandStory: "",
-        academicBiography: "",
-        apostleBiography: "",
-        mainContent: "",
-        additionalContent: ""
+        hero_headline: "",
+        hero_subtext: "",
+        hero_button_text: "",
+        hero_button_link: "",
+        apostle_name: "",
+        academic_biography: "",
+        mission_statement_1: "",
+        mission_statement_2: "",
+        track_record_title: "",
+        track_record_description: ""
       });
       setHeroImage(null);
       setApostleImage(null);
@@ -190,7 +362,6 @@ export default function AboutPage() {
   };
 
   const inputClass = "w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all";
-  const textareaClass = "w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all resize-none";
 
   if (fetching) {
     return (
@@ -202,193 +373,209 @@ export default function AboutPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
-      {/* TOP BAR */}
       <div className="bg-white border-b border-gray-200 px-4 sm:px-8 py-5">
         <p className="text-[15px] font-semibold text-[#1a1612]">
           About Page Setting
         </p>
       </div>
 
-      {/* CONTENT */}
       <div className="px-4 sm:px-8 py-6">
         <div className="flex flex-col lg:flex-row gap-6 items-start">
-          {/* LEFT MAIN PANEL */}
           <div className="flex-1 w-full bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-6 pb-16">
-            {/* About Hero Section */}
+            {/* Hero Section */}
             <div>
-              <p className="text-sm font-semibold text-gray-900 mb-4">
-                About Hero Section
-              </p>
-              <label className="block text-xs text-gray-600 font-medium mb-1.5">
-                Headline
-              </label>
+              <p className="text-sm font-semibold text-gray-900 mb-4">Hero Section</p>
+              <label className="block text-xs text-gray-600 font-medium mb-1.5">Headline</label>
+              <input
+                type="text"
+                value={form.hero_headline}
+                onChange={(e) => handleChange("hero_headline", e.target.value)}
+                placeholder="Enter hero headline"
+                className={inputClass}
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs text-gray-600 font-medium mb-1.5">Subtext</label>
               <textarea
-                name="headline"
-                value={form.headline}
-                onChange={handleChange}
+                value={form.hero_subtext}
+                onChange={(e) => handleChange("hero_subtext", e.target.value)}
                 rows={4}
-                placeholder="Heading text here"
-                className={textareaClass}
+                placeholder="Enter hero subtext"
+                className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all resize-none"
               />
             </div>
 
-            {/* Subtitle */}
-            <div>
-              <label className="block text-xs text-gray-600 font-medium mb-1.5">
-                Subtitle
-              </label>
-              <textarea
-                name="subtitle"
-                value={form.subtitle}
-                onChange={handleChange}
-                rows={6}
-                placeholder="Enter subtitle"
-                className={textareaClass}
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs text-gray-600 font-medium mb-1.5">Button Text</label>
+                <input
+                  type="text"
+                  value={form.hero_button_text}
+                  onChange={(e) => handleChange("hero_button_text", e.target.value)}
+                  placeholder="e.g., Get Involved"
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 font-medium mb-1.5">Button Link</label>
+                <input
+                  type="text"
+                  value={form.hero_button_link}
+                  onChange={(e) => handleChange("hero_button_link", e.target.value)}
+                  placeholder="e.g., /volunteer"
+                  className={inputClass}
+                />
+              </div>
             </div>
 
-            {/* Hero background Image */}
             <ImageUpload 
-              label="Hero background Image" 
+              label="Hero Background Image" 
               onImageChange={setHeroImage}
               existingImage={existingHeroImage}
             />
 
-            {/* Brand Story */}
+            {/* Apostle Section */}
             <div>
-              <label className="block text-xs text-gray-600 font-medium mb-1.5">
-                Brand Story
-              </label>
-              <textarea
-                name="brandStory"
-                value={form.brandStory}
-                onChange={handleChange}
-                rows={6}
-                placeholder="Brand story here..."
-                className={textareaClass}
+              <p className="text-sm font-semibold text-gray-900 mb-4">Apostle Information</p>
+              <label className="block text-xs text-gray-600 font-medium mb-1.5">Apostle Name</label>
+              <input
+                type="text"
+                value={form.apostle_name}
+                onChange={(e) => handleChange("apostle_name", e.target.value)}
+                placeholder="Enter apostle name"
+                className={inputClass}
               />
             </div>
 
-            {/* Academic Biography */}
             <div>
-              <label className="block text-xs text-gray-600 font-medium mb-1.5">
-                Academic Biography
-              </label>
-              <textarea
-                name="academicBiography"
-                value={form.academicBiography}
-                onChange={handleChange}
-                rows={6}
-                placeholder="Academic biography here..."
-                className={textareaClass}
+              <label className="block text-xs text-gray-600 font-medium mb-1.5">Academic Biography</label>
+              <RichTextEditor
+                value={form.academic_biography}
+                onChange={(value) => handleChange("academic_biography", value)}
+                placeholder="Write the academic biography here..."
+                height={300}
               />
             </div>
 
-            {/* Apostle Osaren Emokpae */}
-            <div>
-              <label className="block text-xs text-gray-600 font-medium mb-1.5">
-                Apostle Osaren Emokpae
-              </label>
-              <textarea
-                name="apostleBiography"
-                value={form.apostleBiography}
-                onChange={handleChange}
-                rows={6}
-                placeholder="Apostle biography here..."
-                className={textareaClass}
-              />
-            </div>
-
-            {/* Apostle Osaren Emokpae Image */}
             <ImageUpload 
-              label="Apostle Osaren Emokpae Image" 
+              label="Apostle Image" 
               onImageChange={setApostleImage}
               existingImage={existingApostleImage}
             />
 
-            {/* Track Record Content */}
+            {/* Mission Statements */}
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                Track Record of Excellence
-              </label>
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 bg-[#F1F5F9] border-b border-gray-300">
-                  {["Bold", "Italic", "Link", "Quote", "H2", "H3", "List"].map((tool) => (
-                    <button
-                      key={tool}
-                      type="button"
-                      className="text-xs text-gray-500 hover:text-[#1a1612] font-medium transition-colors"
-                    >
-                      {tool}
-                    </button>
-                  ))}
-                </div>
-                <textarea
-                  name="mainContent"
-                  value={form.mainContent}
-                  onChange={handleChange}
-                  rows={18}
-                  className="w-full px-4 py-3 text-sm text-gray-700 bg-white outline-none resize-none"
-                  placeholder="Enter track record content here..."
-                />
-              </div>
+              <p className="text-sm font-semibold text-gray-900 mb-4">Mission Statements</p>
+              <label className="block text-xs text-gray-600 font-medium mb-1.5">Mission Statement 1</label>
+              <RichTextEditor
+                value={form.mission_statement_1}
+                onChange={(value) => handleChange("mission_statement_1", value)}
+                placeholder="Enter first mission statement..."
+                height={250}
+              />
             </div>
 
-            {/* Additional Content */}
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                Additional Content (Optional)
-              </label>
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-2.5 bg-[#F1F5F9] border-b border-gray-300">
-                  {["Bold", "Italic", "Link", "Quote", "H2", "H3", "List"].map((tool) => (
-                    <button
-                      key={tool}
-                      type="button"
-                      className="text-xs text-gray-500 hover:text-[#1a1612] font-medium transition-colors"
-                    >
-                      {tool}
-                    </button>
-                  ))}
-                </div>
-                <textarea
-                  name="additionalContent"
-                  value={form.additionalContent}
-                  onChange={handleChange}
-                  rows={15}
-                  className="w-full px-4 py-3 text-sm text-gray-700 bg-white outline-none resize-none"
-                  placeholder="Enter additional content here..."
-                />
-              </div>
+              <label className="block text-xs text-gray-600 font-medium mb-1.5">Mission Statement 2 (Global Outreach)</label>
+              <RichTextEditor
+                value={form.mission_statement_2}
+                onChange={(value) => handleChange("mission_statement_2", value)}
+                placeholder="Enter second mission statement..."
+                height={250}
+              />
+            </div>
+
+            {/* Track Record Section */}
+            <div>
+              <p className="text-sm font-semibold text-gray-900 mb-4">Track Record</p>
+              <label className="block text-xs text-gray-600 font-medium mb-1.5">Track Record Title</label>
+              <input
+                type="text"
+                value={form.track_record_title}
+                onChange={(e) => handleChange("track_record_title", e.target.value)}
+                placeholder="Enter track record title"
+                className={inputClass}
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs text-gray-600 font-medium mb-1.5">Track Record Description</label>
+              <RichTextEditor
+                value={form.track_record_description}
+                onChange={(value) => handleChange("track_record_description", value)}
+                placeholder="Enter track record description with bullet points, etc..."
+                height={300}
+              />
             </div>
           </div>
 
-          {/* RIGHT SIDEBAR - Actions */}
-          <div className="w-full lg:w-[240px] flex-shrink-0 space-y-6">
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 pb-16">
-              <p className="text-xs font-semibold text-black tracking-widest uppercase mb-4">
-                Actions
-              </p>
-              <div className="space-y-10">
+          {/* Right Sidebar */}
+          <div className="w-full lg:w-[280px] flex-shrink-0 space-y-6">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+              <p className="text-xs font-semibold text-black tracking-widest uppercase mb-4">Actions</p>
+              <div className="space-y-3">
                 <button
                   onClick={handlePublish}
                   disabled={loading}
-                  className="w-full py-8 rounded-lg text-sm font-semibold bg-[#DCFCE7] text-gray-700 hover:bg-green-200 transition-colors disabled:opacity-50"
+                  className="w-full py-3 rounded-lg text-sm font-semibold bg-[#DCFCE7] text-gray-700 hover:bg-green-200 transition-colors disabled:opacity-50"
                 >
-                  {loading ? "Publishing..." : "Publish"}
+                  {loading ? "Publishing..." : "Publish Changes"}
                 </button>
                 <button
                   onClick={handleReset}
                   disabled={loading}
-                  className="w-full py-8 rounded-lg text-sm font-semibold bg-[#FECACA] text-gray-700 hover:bg-red-200 transition-colors disabled:opacity-50"
+                  className="w-full py-3 rounded-lg text-sm font-semibold bg-[#FECACA] text-gray-700 hover:bg-red-200 transition-colors disabled:opacity-50"
                 >
                   {loading ? "Resetting..." : "Reset to Default"}
                 </button>
               </div>
             </div>
+
+            <div className="bg-blue-50 rounded-xl border border-blue-200 shadow-sm p-5">
+              <p className="text-xs font-semibold text-blue-900 uppercase mb-3">Tips</p>
+              <ul className="text-xs text-blue-800 space-y-2">
+                <li>• Use the toolbar to format your content</li>
+                <li>• Create bullet or numbered lists easily</li>
+                <li>• Add headings, quotes, and more</li>
+                <li>• All formatting is saved as clean HTML</li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        .rich-text-editor :global(.ProseMirror) {
+          min-height: 200px;
+          padding: 1rem;
+          outline: none;
+        }
+        .rich-text-editor :global(.ProseMirror p) {
+          margin-bottom: 0.75rem;
+        }
+        .rich-text-editor :global(.ProseMirror ul),
+        .rich-text-editor :global(.ProseMirror ol) {
+          padding-left: 1.5rem;
+          margin-bottom: 0.75rem;
+        }
+        .rich-text-editor :global(.ProseMirror h2) {
+          font-size: 1.5rem;
+          font-weight: 600;
+          margin-bottom: 0.75rem;
+        }
+        .rich-text-editor :global(.ProseMirror h3) {
+          font-size: 1.25rem;
+          font-weight: 600;
+          margin-bottom: 0.5rem;
+        }
+        .rich-text-editor :global(.ProseMirror blockquote) {
+          border-left: 3px solid #c5a355;
+          padding-left: 1rem;
+          font-style: italic;
+          color: #666;
+        }
+      `}</style>
     </div>
   );
 }
