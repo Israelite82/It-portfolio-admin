@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
+import { aboutAPI } from "../lib/apiService";
 
 function ImageUpload({ label, onImageChange, existingImage }) {
   const [preview, setPreview] = useState(existingImage || null);
@@ -45,54 +46,144 @@ function ImageUpload({ label, onImageChange, existingImage }) {
 
 export default function AboutPage() {
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
+  
   const [form, setForm] = useState({
     headline: "",
     subtitle: "",
     brandStory: "",
+    academicBiography: "",
+    apostleBiography: "",
     mainContent: "",
     additionalContent: ""
   });
+
+  const [heroImage, setHeroImage] = useState(null);
+  const [apostleImage, setApostleImage] = useState(null);
+  const [existingHeroImage, setExistingHeroImage] = useState("");
+  const [existingApostleImage, setExistingApostleImage] = useState("");
+
+  // Fetch existing data on load
+  useEffect(() => {
+    const fetchAboutData = async () => {
+      try {
+        const response = await aboutAPI.getAbout();
+        const data = response.data.data || response.data;
+        
+        if (data) {
+          setForm({
+            headline: data.hero_headline || "",
+            subtitle: data.hero_subtext || "",
+            brandStory: data.brand_story || "",
+            academicBiography: data.academic_biography || "",
+            apostleBiography: data.apostle_content || "",
+            mainContent: data.track_record_content || "",
+            additionalContent: data.additional_content || ""
+          });
+          
+          setExistingHeroImage(data.hero_background_image || "");
+          setExistingApostleImage(data.apostle_image || "");
+        }
+      } catch (error) {
+        console.error("Error fetching about data:", error);
+        toast.error("Failed to load about data");
+      } finally {
+        setFetching(false);
+      }
+    };
+    
+    fetchAboutData();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSave = async () => {
-    setLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      toast.success("Saved successfully!");
-    } catch (error) {
-      toast.error("Failed to save");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handlePublish = async () => {
-    setLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      toast.success("Published successfully!");
-    } catch (error) {
-      toast.error("Failed to publish");
-    } finally {
-      setLoading(false);
+  setLoading(true);
+  try {
+    const formData = new FormData();
+    
+    formData.append("hero_headline", form.headline);
+    formData.append("hero_subtext", form.subtitle);
+    formData.append("brand_story", form.brandStory);
+    formData.append("academic_biography", form.academicBiography);
+    
+    // Fix: Send apostle content correctly
+    formData.append("apostle_content", form.apostleBiography);
+    
+    // Fix: Send track record content correctly  
+    formData.append("track_record_content", form.mainContent);
+    
+    if (form.additionalContent) {
+      formData.append("additional_content", form.additionalContent);
     }
-  };
+    
+    if (heroImage) {
+      formData.append("hero_background_image", heroImage);
+    }
+    if (apostleImage) {
+      formData.append("apostle_image", apostleImage);
+    }
+    
+    // Log what you're sending
+    console.log("Sending apostle_content:", form.apostleBiography);
+    console.log("Sending track_record_content:", form.mainContent);
+    
+    await aboutAPI.updateAbout(formData);
+    
+    toast.success("About page published successfully!");
+    
+    // Refresh after publish
+    const response = await aboutAPI.getAbout();
+    const data = response.data.data || response.data;
+    
+    console.log("After publish - Apostle:", data.brand_story?.apostle);
+    console.log("After publish - Track record:", data.missions?.track_record);
+    
+    // ... rest of refresh code
+  } catch (error) {
+    console.error("Error publishing about:", error);
+    toast.error(error.response?.data?.message || "Failed to publish about page");
+  } finally {
+    setLoading(false);
+  }
+};
 
-  const handleDelete = async () => {
-    if (!window.confirm("Are you sure you want to delete?")) return;
+  const handleReset = async () => {
+    if (!window.confirm("Reset about page to default settings?")) return;
+    
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      toast.success("Deleted successfully!");
+      const formData = new FormData();
+      formData.append("hero_headline", "");
+      formData.append("hero_subtext", "");
+      formData.append("brand_story", "");
+      formData.append("academic_biography", "");
+      formData.append("apostle_content", "");
+      formData.append("track_record_content", "");
+      
+      await aboutAPI.updateAbout(formData);
+      
       setForm({
-        headline: "", subtitle: "", brandStory: "", mainContent: "", additionalContent: ""
+        headline: "",
+        subtitle: "",
+        brandStory: "",
+        academicBiography: "",
+        apostleBiography: "",
+        mainContent: "",
+        additionalContent: ""
       });
+      setHeroImage(null);
+      setApostleImage(null);
+      setExistingHeroImage("");
+      setExistingApostleImage("");
+      
+      toast.success("About page reset to default!");
     } catch (error) {
-      toast.error("Failed to delete");
+      console.error("Error resetting about:", error);
+      toast.error("Failed to reset about page");
     } finally {
       setLoading(false);
     }
@@ -100,6 +191,14 @@ export default function AboutPage() {
 
   const inputClass = "w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all";
   const textareaClass = "w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all resize-none";
+
+  if (fetching) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-500">Loading about page data...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
@@ -149,7 +248,11 @@ export default function AboutPage() {
             </div>
 
             {/* Hero background Image */}
-            <ImageUpload label="Hero background Image" />
+            <ImageUpload 
+              label="Hero background Image" 
+              onImageChange={setHeroImage}
+              existingImage={existingHeroImage}
+            />
 
             {/* Brand Story */}
             <div>
@@ -166,7 +269,7 @@ export default function AboutPage() {
               />
             </div>
 
-             {/* Academic Biography */}
+            {/* Academic Biography */}
             <div>
               <label className="block text-xs text-gray-600 font-medium mb-1.5">
                 Academic Biography
@@ -181,7 +284,7 @@ export default function AboutPage() {
               />
             </div>
 
-             {/* Apostle Osaren Emokpae */}
+            {/* Apostle Osaren Emokpae */}
             <div>
               <label className="block text-xs text-gray-600 font-medium mb-1.5">
                 Apostle Osaren Emokpae
@@ -197,12 +300,16 @@ export default function AboutPage() {
             </div>
 
             {/* Apostle Osaren Emokpae Image */}
-            <ImageUpload label="Apostle Osaren Emokpae Image" />
+            <ImageUpload 
+              label="Apostle Osaren Emokpae Image" 
+              onImageChange={setApostleImage}
+              existingImage={existingApostleImage}
+            />
 
-            {/* Main Content with Toolbar */}
+            {/* Track Record Content */}
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                Main Content
+                Track Record of Excellence
               </label>
               <div className="border border-gray-200 rounded-lg overflow-hidden">
                 <div className="flex items-center gap-2 px-4 py-2.5 bg-[#F1F5F9] border-b border-gray-300">
@@ -222,15 +329,15 @@ export default function AboutPage() {
                   onChange={handleChange}
                   rows={18}
                   className="w-full px-4 py-3 text-sm text-gray-700 bg-white outline-none resize-none"
-                  placeholder="Enter main content here..."
+                  placeholder="Enter track record content here..."
                 />
               </div>
             </div>
 
-            {/* Additional Content with Toolbar */}
+            {/* Additional Content */}
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1.5">
-                Additional Content
+                Additional Content (Optional)
               </label>
               <div className="border border-gray-200 rounded-lg overflow-hidden">
                 <div className="flex items-center gap-2 px-4 py-2.5 bg-[#F1F5F9] border-b border-gray-300">
@@ -257,13 +364,12 @@ export default function AboutPage() {
           </div>
 
           {/* RIGHT SIDEBAR - Actions */}
-          <div className="w-full lg:w-[240px] flex-shrink-0 space-y-6  ">
+          <div className="w-full lg:w-[240px] flex-shrink-0 space-y-6">
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 pb-16">
               <p className="text-xs font-semibold text-black tracking-widest uppercase mb-4">
                 Actions
               </p>
               <div className="space-y-10">
-               
                 <button
                   onClick={handlePublish}
                   disabled={loading}
@@ -272,7 +378,7 @@ export default function AboutPage() {
                   {loading ? "Publishing..." : "Publish"}
                 </button>
                 <button
-                  onClick={handleDelete}
+                  onClick={handleReset}
                   disabled={loading}
                   className="w-full py-8 rounded-lg text-sm font-semibold bg-[#FECACA] text-gray-700 hover:bg-red-200 transition-colors disabled:opacity-50"
                 >
