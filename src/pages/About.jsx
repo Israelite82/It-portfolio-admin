@@ -203,8 +203,10 @@ export default function AboutPage() {
   const [form, setForm] = useState({
     hero_headline: "",
     hero_subtext: "",
-    hero_button_text: "",
-    hero_button_link: "",
+  //hero_button_text: "",
+  //hero_button_link: "",
+    youtube_link: "",
+    linkedin_link: "",
     apostle_name: "",
     academic_biography: "",
     mission_statement_1: "",
@@ -229,8 +231,10 @@ export default function AboutPage() {
           setForm({
             hero_headline: data.hero_section?.headline || "",
             hero_subtext: data.hero_section?.subtext || "",
-            hero_button_text: data.hero_section?.button?.text || "",
-            hero_button_link: data.hero_section?.button?.link || "",
+            youtube_link: data.youtube_link || "",        
+            linkedin_link: data.linkedin_link || "", 
+          //hero_button_text: data.hero_section?.button?.text || "",
+          //hero_button_link: data.hero_section?.button?.link || "",
             apostle_name: data.brand_story?.apostle?.name || "",
             academic_biography: data.brand_story?.academic_biography || "",
             mission_statement_1: data.missions?.mission_statement_1 || "",
@@ -264,8 +268,10 @@ export default function AboutPage() {
       
       formData.append("hero_headline", form.hero_headline);
       formData.append("hero_subtext", form.hero_subtext);
-      formData.append("hero_button_text", form.hero_button_text);
-      formData.append("hero_button_link", form.hero_button_link);
+      formData.append("youtube_link", form.youtube_link);        
+      formData.append("linkedin_link", form.linkedin_link);
+    //formData.append("hero_button_text", form.hero_button_text);
+    //formData.append("hero_button_link", form.hero_button_link);
       formData.append("apostle_name", form.apostle_name);
       formData.append("academic_biography", form.academic_biography);
       formData.append("mission_statement_1", form.mission_statement_1);
@@ -291,8 +297,10 @@ export default function AboutPage() {
         setForm({
           hero_headline: data.hero_section?.headline || "",
           hero_subtext: data.hero_section?.subtext || "",
-          hero_button_text: data.hero_section?.button?.text || "",
-          hero_button_link: data.hero_section?.button?.link || "",
+          youtube_link: data.youtube_link || "",        
+          linkedin_link: data.linkedin_link || "", 
+        //hero_button_text: data.hero_section?.button?.text || "",
+        //hero_button_link: data.hero_section?.button?.link || "",
           apostle_name: data.brand_story?.apostle?.name || "",
           academic_biography: data.brand_story?.academic_biography || "",
           mission_statement_1: data.missions?.mission_statement_1 || "",
@@ -324,7 +332,9 @@ export default function AboutPage() {
       const formData = new FormData();
       formData.append("hero_headline", "");
       formData.append("hero_subtext", "");
-      formData.append("hero_button_text", "");
+      formData.append("youtube_link", "");        
+    //formData.append("linkedin_link", ""); 
+    //formData.append("hero_button_text", "");
       formData.append("hero_button_link", "");
       formData.append("apostle_name", "");
       formData.append("academic_biography", "");
@@ -338,8 +348,10 @@ export default function AboutPage() {
       setForm({
         hero_headline: "",
         hero_subtext: "",
-        hero_button_text: "",
-        hero_button_link: "",
+      //hero_button_text: "",
+      //hero_button_link: "",
+        youtubeLink: "",
+        linkedinLink: "",
         apostle_name: "",
         academic_biography: "",
         mission_statement_1: "",
@@ -406,7 +418,7 @@ export default function AboutPage() {
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs text-gray-600 font-medium mb-1.5">Button Text</label>
                 <input
@@ -427,8 +439,35 @@ export default function AboutPage() {
                   className={inputClass}
                 />
               </div>
-            </div>
+            </div> */}
 
+              {/* Social Media Links */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs text-gray-600 font-medium mb-1.5">
+              YouTube Link
+            </label>
+            <input
+              type="text"
+              value={form.youtube_link}
+              onChange={(e) => handleChange("youtube_link", e.target.value)}
+              placeholder="https://www.youtube.com/..."
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-gray-600 font-medium mb-1.5">
+              LinkedIn Link
+            </label>
+            <input
+              type="text"
+              value={form.linkedin_link}
+              onChange={(e) => handleChange("linkedin_link", e.target.value)}
+              placeholder="https://www.linkedin.com/..."
+              className={inputClass}
+            />
+          </div>
+        </div>
             <ImageUpload 
               label="Hero Background Image" 
               onImageChange={setHeroImage}
