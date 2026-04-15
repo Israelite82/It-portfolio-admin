@@ -203,14 +203,15 @@ export default function AboutPage() {
   const [form, setForm] = useState({
     hero_headline: "",
     hero_subtext: "",
-  //hero_button_text: "",
-  //hero_button_link: "",
+    brand_story: "",
     youtube_link: "",
     linkedin_link: "",
     apostle_name: "",
     academic_biography: "",
+    apostle_biography: "",
     mission_statement_1: "",
     mission_statement_2: "",
+    mission_statement_3: "",
     track_record_title: "",
     track_record_description: ""
   });
@@ -231,14 +232,15 @@ export default function AboutPage() {
           setForm({
             hero_headline: data.hero_section?.headline || "",
             hero_subtext: data.hero_section?.subtext || "",
+            brand_story: data.brand_story.brand_story || "",
             youtube_link: data.youtube_link || "",        
             linkedin_link: data.linkedin_link || "", 
-          //hero_button_text: data.hero_section?.button?.text || "",
-          //hero_button_link: data.hero_section?.button?.link || "",
-            apostle_name: data.brand_story?.apostle?.name || "",
-            academic_biography: data.brand_story?.academic_biography || "",
+            apostle_name: data.apostle_name || "",
+            academic_biography: data.brand_story.academic_biography || "",
+            apostle_biography: data.brand_story.apostle_biography || "",
             mission_statement_1: data.missions?.mission_statement_1 || "",
             mission_statement_2: data.missions?.mission_statement_2 || "",
+            mission_statement_3: data.missions?.mission_statement_3 || "",
             track_record_title: data.missions?.track_record?.title || "",
             track_record_description: data.missions?.track_record?.description || ""
           });
@@ -257,6 +259,8 @@ export default function AboutPage() {
     fetchAboutData();
   }, []);
 
+  
+
   const handleChange = (field, value) => {
     setForm(prev => ({ ...prev, [field]: value }));
   };
@@ -268,14 +272,15 @@ export default function AboutPage() {
       
       formData.append("hero_headline", form.hero_headline);
       formData.append("hero_subtext", form.hero_subtext);
+      formData.append("brand_story", form.brand_story);
       formData.append("youtube_link", form.youtube_link);        
       formData.append("linkedin_link", form.linkedin_link);
-    //formData.append("hero_button_text", form.hero_button_text);
-    //formData.append("hero_button_link", form.hero_button_link);
       formData.append("apostle_name", form.apostle_name);
       formData.append("academic_biography", form.academic_biography);
+      formData.append("apostle_biography", form.apostle_biography);
       formData.append("mission_statement_1", form.mission_statement_1);
       formData.append("mission_statement_2", form.mission_statement_2);
+      formData.append("mission_statement_3", form.mission_statement_3);
       formData.append("track_record_title", form.track_record_title);
       formData.append("track_record_description", form.track_record_description);
       
@@ -285,6 +290,8 @@ export default function AboutPage() {
       if (apostleImage) {
         formData.append("apostle_image", apostleImage);
       }
+
+      // console.log(formData.values());
       
       await aboutAPI.updateAbout(formData);
       toast.success("About page published successfully!");
@@ -293,18 +300,20 @@ export default function AboutPage() {
       const response = await aboutAPI.getAbout();
       const data = response.data.data || response.data;
       
+      
       if (data) {
         setForm({
           hero_headline: data.hero_section?.headline || "",
           hero_subtext: data.hero_section?.subtext || "",
+          brand_story: data.brand_story || "",
           youtube_link: data.youtube_link || "",        
           linkedin_link: data.linkedin_link || "", 
-        //hero_button_text: data.hero_section?.button?.text || "",
-        //hero_button_link: data.hero_section?.button?.link || "",
-          apostle_name: data.brand_story?.apostle?.name || "",
-          academic_biography: data.brand_story?.academic_biography || "",
+          apostle_name: data.apostle_name || "",
+          academic_biography: data.academic_biography || "",
+          apostle_biography: data.apostle_biography || "",
           mission_statement_1: data.missions?.mission_statement_1 || "",
           mission_statement_2: data.missions?.mission_statement_2 || "",
+          mission_statement_3: data.missions?.mission_statement_3 || "",
           track_record_title: data.missions?.track_record?.title || "",
           track_record_description: data.missions?.track_record?.description || ""
         });
@@ -332,14 +341,15 @@ export default function AboutPage() {
       const formData = new FormData();
       formData.append("hero_headline", "");
       formData.append("hero_subtext", "");
+      formData.append("brand_story", "");
       formData.append("youtube_link", "");        
-    //formData.append("linkedin_link", ""); 
-    //formData.append("hero_button_text", "");
-      formData.append("hero_button_link", "");
+      formData.append("linkedin_link", ""); 
       formData.append("apostle_name", "");
       formData.append("academic_biography", "");
+      formData.append("apostle_biography", "");
       formData.append("mission_statement_1", "");
       formData.append("mission_statement_2", "");
+      formData.append("mission_statement_3", "");
       formData.append("track_record_title", "");
       formData.append("track_record_description", "");
       
@@ -348,14 +358,15 @@ export default function AboutPage() {
       setForm({
         hero_headline: "",
         hero_subtext: "",
-      //hero_button_text: "",
-      //hero_button_link: "",
+        brand_story: "",
         youtubeLink: "",
         linkedinLink: "",
         apostle_name: "",
         academic_biography: "",
+        apostle_biography: "",
         mission_statement_1: "",
         mission_statement_2: "",
+        mission_statement_3: "",
         track_record_title: "",
         track_record_description: ""
       });
@@ -417,6 +428,17 @@ export default function AboutPage() {
                 className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all resize-none"
               />
             </div>
+            {/* Brand story */}
+             <div>
+              <label className="block text-xs text-gray-600 font-medium mb-1.5">Brand Story</label>
+              <RichTextEditor
+                value={form.brand_story}
+                onChange={(value) => handleChange("brand_story", value)}
+                placeholder="Write the brand story here..."
+                height={200}
+              />
+            </div>
+
 
             {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -488,7 +510,7 @@ export default function AboutPage() {
             </div>
 
             <div>
-              <label className="block text-xs text-gray-600 font-medium mb-1.5">Academic Biography</label>
+              <label className="block text-sm text-gray-600 font-medium mb-1.5">Academic Biography</label>
               <RichTextEditor
                 value={form.academic_biography}
                 onChange={(value) => handleChange("academic_biography", value)}
@@ -496,6 +518,18 @@ export default function AboutPage() {
                 height={300}
               />
             </div>
+
+             {/* Apostle biography */}
+             <div>
+              <label className="block text-sm text-gray-600 font-medium mb-1.5">Apostle Biography</label>
+              <RichTextEditor
+                value={form.apostle_biography}
+                onChange={(value) => handleChange("apostle_biography", value)}
+                placeholder="Write the apostle biography here..."
+                height={300}
+              />
+            </div>
+
 
             <ImageUpload 
               label="Apostle Image" 
@@ -514,9 +548,10 @@ export default function AboutPage() {
                 height={250}
               />
             </div>
-
+       
+              {/* New Mission Statement 2 */}
             <div>
-              <label className="block text-xs text-gray-600 font-medium mb-1.5">Mission Statement 2 (Global Outreach)</label>
+              <label className="block text-sm text-gray-600 font-medium mb-1.5">Mission Statement 2</label>
               <RichTextEditor
                 value={form.mission_statement_2}
                 onChange={(value) => handleChange("mission_statement_2", value)}
@@ -524,11 +559,22 @@ export default function AboutPage() {
                 height={250}
               />
             </div>
+             
+             {/* New Mission Statement 3 */}
+            <div>
+              <label className="block text-sm text-gray-600 font-medium mb-1.5">Mission Statement 3</label>
+              <RichTextEditor
+                value={form.mission_statement_3}
+                onChange={(value) => handleChange("mission_statement_3", value)}
+                placeholder="Enter third mission statement..."
+                height={250}
+              />
+            </div>
 
             {/* Track Record Section */}
             <div>
-              <p className="text-sm font-semibold text-gray-900 mb-4">Track Record</p>
-              <label className="block text-xs text-gray-600 font-medium mb-1.5">Track Record Title</label>
+              <p className="text-md font-semibold text-gray-900 mb-4">Track Record</p>
+              <label className="block text-sm text-gray-600 font-medium mb-1.5">Track Record Title</label>
               <input
                 type="text"
                 value={form.track_record_title}
@@ -539,7 +585,7 @@ export default function AboutPage() {
             </div>
 
             <div>
-              <label className="block text-xs text-gray-600 font-medium mb-1.5">Track Record Description</label>
+              <label className="block text-sm text-gray-600 font-medium mb-1.5">Track Record Description</label>
               <RichTextEditor
                 value={form.track_record_description}
                 onChange={(value) => handleChange("track_record_description", value)}
