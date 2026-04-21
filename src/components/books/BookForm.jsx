@@ -51,7 +51,7 @@ export default function BookForm({
                 />
               </div>
 
-              <div>
+              <div> 
                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">
                   Description
                 </label>
@@ -124,10 +124,25 @@ export default function BookForm({
                 </label>
                 <input
                   type="text"
-                  name="amazon"
+                  name="amazon_link"
                   value={form.amazon}
                   onChange={onChange}
                   className={inputClass}
+                  placeholder="https://amazon.com/..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                  Book Link (General)
+                </label>
+                <input
+                  type="text"
+                  name="book"
+                  value={form.book}
+                  onChange={onChange}
+                  className={inputClass}
+                  placeholder="https://example.com/book"
                 />
               </div>
 
@@ -137,10 +152,11 @@ export default function BookForm({
                 </label>
                 <input
                   type="text"
-                  name="otherStore"
-                  value={form.otherStore}
+                  name="other_store_link"
+                  value={form.other_store_link}
                   onChange={onChange}
                   className={inputClass}
+                  placeholder="https://otherstore.com/..."
                 />
               </div>
 
