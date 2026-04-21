@@ -21,6 +21,7 @@ export default function Books() {
     publisher: "",
     edition: "",
     amazon: "",
+    book: "",
     otherStore: "",
     visibility: "",
     categories: "",
@@ -63,6 +64,7 @@ export default function Books() {
       publisher: "",
       edition: "",
       amazon: "",
+      book: "",
       otherStore: "",
       visibility: "",
       categories: "",
@@ -84,6 +86,7 @@ export default function Books() {
       publisher: book.publisher || "",
       edition: book.edition || "",
       amazon: book.amazon || "",
+      book: book.book || "",
       otherStore: book.other_store || "",
       visibility: book.visibility || "",
       categories: book.categories || "",
@@ -110,6 +113,7 @@ export default function Books() {
       formData.append("publisher", form.publisher);
       formData.append("edition", form.edition);
       formData.append("amazon", form.amazon);
+      formData.append("book", form.book);
       formData.append("other_store", form.otherStore);
       formData.append("feature_homepage", form.featureOnHomepage ? 1 : 0);
       formData.append("status", "DRAFT");
@@ -154,13 +158,18 @@ export default function Books() {
       formData.append("publisher", form.publisher);
       formData.append("edition", form.edition);
       formData.append("amazon", form.amazon);
+      formData.append("link", form.book); 
       formData.append("other_store", form.otherStore);
       formData.append("feature_homepage", form.featureOnHomepage ? 1 : 0);
       formData.append("status", "ACTIVE");
 
       if (bookFile) formData.append("book_file", bookFile);
       if (bookCover) formData.append("book_cover", bookCover);
-
+      console.log("FormData entries:");
+      for (let pair of formData.entries()) {
+        console.log(pair[0] + ": " + pair[1]);
+      }
+ 
       if (view === "add") {
         await booksAPI.create(formData);
         toast.success("Book published!");
