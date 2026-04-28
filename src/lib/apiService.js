@@ -109,23 +109,17 @@ export const subscribersAPI = {
 
 // ===== HOMEPAGE API =====
 export const homepageAPI = {
-  // Update hero section
-  updateHero: (data) => api.post("/homepage/hero", data),
+  // Get all homepage data
+  getHomePage: () => api.get("/homepage"),
+  
+  // Update everything in one request
+  updateHomepage: (data) => api.post("/homepage", data),
   
   // Delete hero background image
-  deleteHeroImage: () => api.delete("/homepage/hero/image"),
+  deleteHeroImage: () => api.delete("/homepage/hero-image"),
   
-  // Update section order
- updateSectionOrder: (sections) => api.post("/homepage/section-order", { sections }),
-  
-  // Toggle section visibility
-  toggleSection: (section) => api.patch(`/homepage/sections/${section}/toggle`),
-  
-  // Set featured item
-  setFeaturedItem: (data) => api.post("/homepage/featured-items", data),
-  
-  // Get featured items
-  getFeaturedItems: () => api.get("/homepage/featured-items"),
+  // Delete biography image
+  deleteBiographyImage: () => api.delete("/homepage/biography-image"),
 };
 
 // ===== ANALYTICS API =====
