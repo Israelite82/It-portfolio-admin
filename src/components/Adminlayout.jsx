@@ -59,6 +59,13 @@ const navItems = [
     ),
   },
   {
+    path: "/footer",
+    label: "Footer",
+    icon: (
+      <img src="/footericon.png" alt="Analytics Icon" className="w-5 h-5 transition-opacity duration-150" />
+    ),
+  },
+  {
     path: "/subscribers",
     label: "Subscribers",
     icon: (

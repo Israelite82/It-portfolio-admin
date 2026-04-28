@@ -11,6 +11,7 @@ import Journals from "./pages/Journals";
 import Teachings from "./pages/Teachings";
 import Blog from "./pages/Blog";
 import Analytics from "./pages/Analytics";
+import Footer from "./pages/Footer";
 import Subscribers from "./pages/Subscribers";
 import Menu from "./pages/Menu";
 import Settings from "./pages/Settings";
@@ -82,6 +83,7 @@ export default function App() {
           <Route path="teachings" element={<Teachings />} />
           <Route path="blog" element={<Blog />} />
           <Route path="analytics" element={<Analytics />} />
+          <Route path="footer" element={<Footer />} />
           <Route path="subscribers" element={<Subscribers />} />
           <Route path="menu" element={<Menu />} />
           <Route path="settings" element={<Settings />} />

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { homepageAPI } from "../lib/apiService";
 import toast from "react-hot-toast";
 
@@ -12,6 +12,25 @@ export default function Homepage() {
     overlayOpacity: "0.6",
     textColor: "#ffffff",
   });
+  useEffect(() => {
+  homepageAPI.getFeaturedItems()
+    .then((res) => {
+      console.log("API RESPONSE:", res.data);
+
+      // 👇 VERY SAFE (won’t crash your app)
+      if (res.data) {
+        setFeaturedItems({
+          featuredTeaching: res.data.featuredTeaching || "",
+          featuredBlog: res.data.featuredBlog || "",
+          featuredBook: res.data.featuredBook || "",
+          journalSpotlight: res.data.journalSpotlight || "",
+        });
+      }
+    })
+    .catch((err) => {
+      console.error("GET ERROR:", err);
+    });
+}, []);
 
   const [featuredItems, setFeaturedItems] = useState({
     featuredTeaching: "",
