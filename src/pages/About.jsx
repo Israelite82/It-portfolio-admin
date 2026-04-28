@@ -550,7 +550,7 @@ export default function AboutPage() {
             </div>
        
               {/* New Mission Statement 2 */}
-            <div>
+            {/* <div>
               <label className="block text-sm text-gray-600 font-medium mb-1.5">Mission Statement 2</label>
               <RichTextEditor
                 value={form.mission_statement_2}
@@ -558,10 +558,10 @@ export default function AboutPage() {
                 placeholder="Enter second mission statement..."
                 height={250}
               />
-            </div>
+            </div> */}
              
              {/* New Mission Statement 3 */}
-            <div>
+            {/* <div>
               <label className="block text-sm text-gray-600 font-medium mb-1.5">Mission Statement 3</label>
               <RichTextEditor
                 value={form.mission_statement_3}
@@ -569,7 +569,7 @@ export default function AboutPage() {
                 placeholder="Enter third mission statement..."
                 height={250}
               />
-            </div>
+            </div> */}
 
             {/* Track Record Section */}
             <div>
