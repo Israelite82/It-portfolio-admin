@@ -62,6 +62,11 @@ export const aboutAPI = {
   }
 };
 
+export const footerAPI = {
+  getFooter: () => api.get('/footer'),
+  updateFooter: (data) => api.post('/footer', data),
+};
+
 // ===== BOOKS API =====
 export const booksAPI = {
   getAll: () => api.get("/books"),
