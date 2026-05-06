@@ -59,7 +59,22 @@ export const aboutAPI = {
       });
     }
     return api.post('/about', data);
-  }
+  },
+    // Custom sections endpoints
+  getCustomSections: () => api.get('/about/sections'),
+  addCustomSection: (data) => api.post('/about/sections', data),
+  updateCustomSection: (id, data) => api.put(`/about/sections/${id}`, data),
+  deleteCustomSection: (id) => api.delete(`/about/sections/${id}`),
+  reorderSections: (data) => api.put('/about/sections/reorder', data),
+  uploadSectionImage: (id, formData) => api.post(`/about/sections/${id}/image`, formData),
+  
+  // Image management
+  deleteHeroImage: () => api.delete('/about/hero-image'),
+  deleteApostleImage: () => api.delete('/about/apostle-image'),
+  
+  // Version control (optional)
+  getVersions: () => api.get('/about/versions'),
+  restoreVersion: (id) => api.post(`/about/versions/${id}/restore`),
 };
 
 export const footerAPI = {

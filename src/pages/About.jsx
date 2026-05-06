@@ -284,6 +284,416 @@ function ArrayField({ label, items, onItemsChange, itemFields }) {
   );
 }
 
+// Add this new component before the AboutPage component
+function CustomSectionsManager({ sections, onSectionsChange }) {
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newSectionType, setNewSectionType] = useState('text');
+  const [editingSection, setEditingSection] = useState(null);
+
+  const sectionTypes = [
+    { value: 'text', label: 'Text Section', icon: '📝', description: 'Simple text with optional heading' },
+    { value: 'richtext', label: 'Rich Text', icon: '📄', description: 'Full HTML editor content' },
+    { value: 'image', label: 'Image Section', icon: '🖼️', description: 'Image with caption' },
+    { value: 'two_column', label: 'Two Column', icon: '📊', description: 'Side-by-side content' },
+    { value: 'cards', label: 'Cards Grid', icon: '🎴', description: 'Grid of cards with icons' },
+    { value: 'quote', label: 'Quote', icon: '💬', description: 'Featured quote section' },
+    { value: 'cta', label: 'Call to Action', icon: '🎯', description: 'Button with message' },
+    { value: 'skills_grid', label: 'Skills Grid', icon: '⭐', description: 'Grid of skills/icons' },
+  ];
+
+  const getDefaultData = (type) => {
+    switch(type) {
+      case 'text':
+        return { heading: '', content: '' };
+      case 'richtext':
+        return { content: '' };
+      case 'image':
+        return { image_url: null, image_path: null, caption: '', alignment: 'center' };
+      case 'two_column':
+        return { left_content: '', right_content: '', left_image: null, right_image: null };
+      case 'cards':
+        return { cards: [{ title: '', description: '', icon: '', link: '' }] };
+      case 'quote':
+        return { text: '', author: '', background_color: '#f3f4f6' };
+      case 'cta':
+        return { title: '', button_text: '', button_link: '', background_color: '#1e3a8a' };
+      case 'skills_grid':
+        return { skills: [{ name: '', icon: '' }] };
+      default:
+        return {};
+    }
+  };
+
+  // Add this inside your CustomSectionsManager component, before the return statement
+const inputClass = "w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all";
+
+  const handleAddSection = async () => {
+    const newSection = {
+      type: newSectionType,
+      label: `New ${sectionTypes.find(t => t.value === newSectionType)?.label}`,
+      visible: true,
+      data: getDefaultData(newSectionType)
+    };
+
+    try {
+      const response = await aboutAPI.addCustomSection(newSection);
+      onSectionsChange([...sections, response.data.data]);
+      setShowAddModal(false);
+      setNewSectionType('text');
+      toast.success('Section added successfully');
+    } catch (error) {
+      console.error('Error adding section:', error);
+      toast.error('Failed to add section');
+    }
+  };
+
+  const handleUpdateSection = async (id, updates) => {
+    try {
+      await aboutAPI.updateCustomSection(id, updates);
+      const updatedSections = sections.map(s => 
+        s.id === id ? { ...s, ...updates } : s
+      );
+      onSectionsChange(updatedSections);
+      toast.success('Section updated');
+    } catch (error) {
+      console.error('Error updating section:', error);
+      toast.error('Failed to update section');
+    }
+  };
+
+  const handleDeleteSection = async (id) => {
+    if (!confirm('Delete this section?')) return;
+    try {
+      await aboutAPI.deleteCustomSection(id);
+      const updatedSections = sections.filter(s => s.id !== id);
+      onSectionsChange(updatedSections);
+      toast.success('Section deleted');
+    } catch (error) {
+      console.error('Error deleting section:', error);
+      toast.error('Failed to delete section');
+    }
+  };
+
+  const handleReorder = async (newOrder) => {
+    const orderedIds = newOrder.map(s => s.id);
+    try {
+      await aboutAPI.reorderSections({ ids: orderedIds });
+      onSectionsChange(newOrder);
+      toast.success('Sections reordered');
+    } catch (error) {
+      console.error('Error reordering sections:', error);
+      toast.error('Failed to reorder sections');
+    }
+  };
+
+  const SectionEditor = ({ section, onUpdate, onDelete }) => {
+    const [localData, setLocalData] = useState(section.data);
+    const [label, setLabel] = useState(section.label);
+    const [visible, setVisible] = useState(section.visible);
+
+    const handleSave = () => {
+      onUpdate(section.id, { label, visible, data: localData });
+      setEditingSection(null);
+    };
+
+    const renderDataEditor = () => {
+      switch(section.type) {
+        case 'text':
+          return (
+            <div className="space-y-3">
+              <input
+                type="text"
+                value={localData.heading || ''}
+                onChange={(e) => setLocalData({ ...localData, heading: e.target.value })}
+                placeholder="Heading"
+                className={inputClass}
+              />
+              <textarea
+                value={localData.content || ''}
+                onChange={(e) => setLocalData({ ...localData, content: e.target.value })}
+                placeholder="Content"
+                rows={5}
+                className={inputClass}
+              />
+            </div>
+          );
+        case 'richtext':
+          return (
+            <RichTextEditor
+              value={localData.content || ''}
+              onChange={(value) => setLocalData({ ...localData, content: value })}
+              placeholder="Write your content here..."
+              height={300}
+            />
+          );
+        case 'image':
+          return (
+            <div className="space-y-3">
+              <ImageUpload
+                label="Section Image"
+                existingImage={localData.image_url}
+                onImageChange={async (file) => {
+                  if (file) {
+                    const formData = new FormData();
+                    formData.append('image', file);
+                    const response = await aboutAPI.uploadSectionImage(section.id, formData);
+                    setLocalData({ ...localData, image_url: response.data.data.data.image_url, image_path: response.data.data.data.image_path });
+                  }
+                }}
+              />
+              <input
+                type="text"
+                value={localData.caption || ''}
+                onChange={(e) => setLocalData({ ...localData, caption: e.target.value })}
+                placeholder="Caption"
+                className={inputClass}
+              />
+              <select
+                value={localData.alignment || 'center'}
+                onChange={(e) => setLocalData({ ...localData, alignment: e.target.value })}
+                className={inputClass}
+              >
+                <option value="left">Left</option>
+                <option value="center">Center</option>
+                <option value="right">Right</option>
+              </select>
+            </div>
+          );
+        case 'two_column':
+          return (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">Left Content</label>
+                <textarea
+                  value={localData.left_content || ''}
+                  onChange={(e) => setLocalData({ ...localData, left_content: e.target.value })}
+                  rows={5}
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Right Content</label>
+                <textarea
+                  value={localData.right_content || ''}
+                  onChange={(e) => setLocalData({ ...localData, right_content: e.target.value })}
+                  rows={5}
+                  className={inputClass}
+                />
+              </div>
+            </div>
+          );
+        case 'cards':
+          return (
+            <ArrayField
+              label="Cards"
+              items={localData.cards || []}
+              onItemsChange={(items) => setLocalData({ ...localData, cards: items })}
+              itemFields={[
+                { name: 'title', label: 'Title', type: 'text' },
+                { name: 'description', label: 'Description', type: 'textarea', rows: 2 },
+                { name: 'icon', label: 'Icon URL', type: 'text' },
+                { name: 'link', label: 'Link URL', type: 'text' }
+              ]}
+            />
+          );
+        case 'quote':
+          return (
+            <div className="space-y-3">
+              <textarea
+                value={localData.text || ''}
+                onChange={(e) => setLocalData({ ...localData, text: e.target.value })}
+                placeholder="Quote text"
+                rows={3}
+                className={inputClass}
+              />
+              <input
+                type="text"
+                value={localData.author || ''}
+                onChange={(e) => setLocalData({ ...localData, author: e.target.value })}
+                placeholder="Author"
+                className={inputClass}
+              />
+              <input
+                type="color"
+                value={localData.background_color || '#f3f4f6'}
+                onChange={(e) => setLocalData({ ...localData, background_color: e.target.value })}
+                className="w-full h-10"
+              />
+            </div>
+          );
+        case 'cta':
+          return (
+            <div className="space-y-3">
+              <input
+                type="text"
+                value={localData.title || ''}
+                onChange={(e) => setLocalData({ ...localData, title: e.target.value })}
+                placeholder="Title"
+                className={inputClass}
+              />
+              <input
+                type="text"
+                value={localData.button_text || ''}
+                onChange={(e) => setLocalData({ ...localData, button_text: e.target.value })}
+                placeholder="Button Text"
+                className={inputClass}
+              />
+              <input
+                type="text"
+                value={localData.button_link || ''}
+                onChange={(e) => setLocalData({ ...localData, button_link: e.target.value })}
+                placeholder="Button Link"
+                className={inputClass}
+              />
+              <input
+                type="color"
+                value={localData.background_color || '#1e3a8a'}
+                onChange={(e) => setLocalData({ ...localData, background_color: e.target.value })}
+                className="w-full h-10"
+              />
+            </div>
+          );
+        case 'skills_grid':
+          return (
+            <ArrayField
+              label="Skills"
+              items={localData.skills || []}
+              onItemsChange={(items) => setLocalData({ ...localData, skills: items })}
+              itemFields={[
+                { name: 'name', label: 'Skill Name', type: 'text' },
+                { name: 'icon', label: 'Icon URL', type: 'text' }
+              ]}
+            />
+          );
+        default:
+          return <div>Unknown section type</div>;
+      }
+    };
+
+    return (
+      <div className="border-2 border-blue-300 rounded-lg p-4 mb-4 bg-blue-50">
+        <div className="flex justify-between items-center mb-3">
+          <div className="flex items-center gap-3">
+            <input
+              type="text"
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+              className="text-lg font-semibold border rounded px-2 py-1"
+            />
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={visible}
+                onChange={(e) => setVisible(e.target.checked)}
+              />
+              <span className="text-sm">Visible</span>
+            </label>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={handleSave} className="px-3 py-1 bg-green-500 text-white rounded">Save</button>
+            <button onClick={() => setEditingSection(null)} className="px-3 py-1 bg-gray-500 text-white rounded">Cancel</button>
+            <button onClick={() => onDelete(section.id)} className="px-3 py-1 bg-red-500 text-white rounded">Delete</button>
+          </div>
+        </div>
+        {renderDataEditor()}
+      </div>
+    );
+  };
+
+  return (
+    <div className="mt-8 border-t pt-6">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold text-gray-900">Custom Sections</h3>
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          + Add Section
+        </button>
+      </div>
+
+      {/* Sortable Sections List */}
+      <div className="space-y-3">
+        {sections.map((section, idx) => (
+          <div key={section.id} className="border rounded-lg p-4 bg-white shadow-sm">
+            {editingSection === section.id ? (
+              <SectionEditor
+                section={section}
+                onUpdate={handleUpdateSection}
+                onDelete={handleDeleteSection}
+              />
+            ) : (
+              <div className="flex justify-between items-center">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3">
+                    <span className="text-gray-400 cursor-move">⋮⋮</span>
+                    <h4 className="font-semibold">{section.label}</h4>
+                    <span className="text-xs px-2 py-1 bg-gray-200 rounded">{section.type}</span>
+                    {!section.visible && <span className="text-xs text-red-500">Hidden</span>}
+                  </div>
+                  <div className="text-sm text-gray-500 mt-1">
+                    {section.type === 'text' && section.data?.heading && <span>Heading: {section.data.heading}</span>}
+                    {section.type === 'quote' && section.data?.text && <span>"{section.data.text.substring(0, 50)}..."</span>}
+                    {section.type === 'cards' && <span>{section.data?.cards?.length || 0} cards</span>}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setEditingSection(section.id)}
+                    className="px-3 py-1 bg-yellow-500 text-white rounded"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDeleteSection(section.id)}
+                    className="px-3 py-1 bg-red-500 text-white rounded"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Add Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-96">
+            <h3 className="text-lg font-semibold mb-4">Add New Section</h3>
+            <select
+              value={newSectionType}
+              onChange={(e) => setNewSectionType(e.target.value)}
+              className={inputClass + " mb-4"}
+            >
+              {sectionTypes.map(type => (
+                <option key={type.value} value={type.value}>
+                  {type.icon} {type.label} - {type.description}
+                </option>
+              ))}
+            </select>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="px-4 py-2 bg-gray-500 text-white rounded"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddSection}
+                className="px-4 py-2 bg-blue-600 text-white rounded"
+              >
+                Add Section
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AboutPage() {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
@@ -803,6 +1213,12 @@ export default function AboutPage() {
                 ]}
               />
             </div>
+
+            {/* Custom Sections */}
+            <CustomSectionsManager 
+              sections={form.custom_sections || []}
+              onSectionsChange={(sections) => handleChange('custom_sections', sections)}
+            />
 
           </div>
 
