@@ -288,6 +288,7 @@ function ArrayField({ label, items, onItemsChange, itemFields }) {
 function CustomSectionsManager({ sections, onSectionsChange }) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newSectionType, setNewSectionType] = useState('text');
+  const [draggedItem, setDraggedItem] = useState(null);
   const [editingSection, setEditingSection] = useState(null);
 
   const sectionTypes = [
@@ -308,7 +309,7 @@ function CustomSectionsManager({ sections, onSectionsChange }) {
       case 'richtext':
         return { content: '' };
       case 'image':
-        return { image_url: null, image_path: null, caption: '', alignment: 'center' };
+        return { image_url: null, image_path: null, caption: '', alignment: 'center', content: '', };
       case 'two_column':
         return { left_content: '', right_content: '', left_image: null, right_image: null };
       case 'cards':
@@ -323,6 +324,45 @@ function CustomSectionsManager({ sections, onSectionsChange }) {
         return {};
     }
   };
+
+  const handleDragStart = (e, index) => {
+  setDraggedItem(index);
+  e.dataTransfer.effectAllowed = 'move';
+};
+
+const handleDragOver = (e, index) => {
+  e.preventDefault();
+  if (draggedItem === null) return;
+  
+  if (draggedItem !== index) {
+    const newSections = [...sections];
+    const draggedSection = newSections[draggedItem];
+    newSections.splice(draggedItem, 1);
+    newSections.splice(index, 0, draggedSection);
+    
+    // Update order numbers
+    const reorderedSections = newSections.map((sec, idx) => ({
+      ...sec,
+      order: idx + 1
+    }));
+    
+    setDraggedItem(index);
+    onSectionsChange(reorderedSections);
+  }
+};
+
+const handleDragEnd = async () => {
+  setDraggedItem(null);
+  // Save the new order to API
+  const orderedIds = sections.map(s => s.id);
+  try {
+    await aboutAPI.reorderSections({ ids: orderedIds });
+    toast.success('Sections reordered');
+  } catch (error) {
+    console.error('Error saving order:', error);
+    toast.error('Failed to save order');
+  }
+};
 
   // Add this inside your CustomSectionsManager component, before the return statement
 const inputClass = "w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 bg-gray-50 outline-none focus:border-[#c5a355] focus:ring-2 focus:ring-[rgba(197,163,85,0.15)] transition-all";
@@ -426,39 +466,57 @@ const inputClass = "w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm
               height={300}
             />
           );
-        case 'image':
-          return (
-            <div className="space-y-3">
-              <ImageUpload
-                label="Section Image"
-                existingImage={localData.image_url}
-                onImageChange={async (file) => {
-                  if (file) {
-                    const formData = new FormData();
-                    formData.append('image', file);
-                    const response = await aboutAPI.uploadSectionImage(section.id, formData);
-                    setLocalData({ ...localData, image_url: response.data.data.data.image_url, image_path: response.data.data.data.image_path });
-                  }
-                }}
-              />
-              <input
-                type="text"
-                value={localData.caption || ''}
-                onChange={(e) => setLocalData({ ...localData, caption: e.target.value })}
-                placeholder="Caption"
-                className={inputClass}
-              />
-              <select
-                value={localData.alignment || 'center'}
-                onChange={(e) => setLocalData({ ...localData, alignment: e.target.value })}
-                className={inputClass}
-              >
-                <option value="left">Left</option>
-                <option value="center">Center</option>
-                <option value="right">Right</option>
-              </select>
-            </div>
-          );
+       case 'image':
+  return (
+    <div className="space-y-3">
+      <ImageUpload
+        label="Section Image"
+        existingImage={localData.image_url}
+        onImageChange={async (file) => {
+          if (file) {
+            const formData = new FormData();
+            formData.append('image', file);
+            const response = await aboutAPI.uploadSectionImage(section.id, formData);
+            // Updated to ensure we grab the correct nested data path from your API response
+            setLocalData({ 
+              ...localData, 
+              image_url: response.data.data.data.image_url, 
+              image_path: response.data.data.data.image_path 
+            });
+          }
+        }}
+      />
+      
+      {/* ADD THIS: Content field so you can actually write text next to the image */}
+      <div>
+        <label className="block text-xs text-gray-600 font-medium mb-1.5">Section Content (Next to Image)</label>
+        <textarea
+          value={localData.content || ''}
+          onChange={(e) => setLocalData({ ...localData, content: e.target.value })}
+          placeholder="Write the text that will appear on the right side of the image..."
+          rows={5}
+          className={inputClass}
+        />
+      </div>
+
+      <input
+        type="text"
+        value={localData.caption || ''}
+        onChange={(e) => setLocalData({ ...localData, caption: e.target.value })}
+        placeholder="Image Caption (e.g. Dr. Name)"
+        className={inputClass}
+      />
+      
+      <select
+        value={localData.alignment || 'center'}
+        onChange={(e) => setLocalData({ ...localData, alignment: e.target.value })}
+        className={inputClass}
+      >
+        <option value="left">Image on Left</option>
+        <option value="right">Image on Right</option>
+      </select>
+    </div>
+  );
         case 'two_column':
           return (
             <div className="grid grid-cols-2 gap-4">
@@ -613,49 +671,60 @@ const inputClass = "w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm
       </div>
 
       {/* Sortable Sections List */}
-      <div className="space-y-3">
-        {sections.map((section, idx) => (
-          <div key={section.id} className="border rounded-lg p-4 bg-white shadow-sm">
-            {editingSection === section.id ? (
-              <SectionEditor
-                section={section}
-                onUpdate={handleUpdateSection}
-                onDelete={handleDeleteSection}
-              />
-            ) : (
-              <div className="flex justify-between items-center">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3">
-                    <span className="text-gray-400 cursor-move">⋮⋮</span>
-                    <h4 className="font-semibold">{section.label}</h4>
-                    <span className="text-xs px-2 py-1 bg-gray-200 rounded">{section.type}</span>
-                    {!section.visible && <span className="text-xs text-red-500">Hidden</span>}
-                  </div>
-                  <div className="text-sm text-gray-500 mt-1">
-                    {section.type === 'text' && section.data?.heading && <span>Heading: {section.data.heading}</span>}
-                    {section.type === 'quote' && section.data?.text && <span>"{section.data.text.substring(0, 50)}..."</span>}
-                    {section.type === 'cards' && <span>{section.data?.cards?.length || 0} cards</span>}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setEditingSection(section.id)}
-                    className="px-3 py-1 bg-yellow-500 text-white rounded"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDeleteSection(section.id)}
-                    className="px-3 py-1 bg-red-500 text-white rounded"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            )}
+      {/* Sortable Sections List */}
+<div className="space-y-3">
+  {sections.map((section, idx) => (
+    <div
+      key={section.id}
+      draggable
+      onDragStart={(e) => handleDragStart(e, idx)}
+      onDragOver={(e) => handleDragOver(e, idx)}
+      onDragEnd={handleDragEnd}
+      className={`border rounded-lg p-4 bg-white shadow-sm cursor-move transition-all ${
+        draggedItem === idx ? 'opacity-50' : 'opacity-100'
+      }`}
+    >
+      {/* Rest of your section display code - keep as is */}
+      {editingSection === section.id ? (
+        <SectionEditor
+          section={section}
+          onUpdate={handleUpdateSection}
+          onDelete={handleDeleteSection}
+        />
+      ) : (
+        <div className="flex justify-between items-center">
+          <div className="flex-1">
+            <div className="flex items-center gap-3">
+              <span className="text-gray-400 cursor-grab">⋮⋮</span>
+              <h4 className="font-semibold">{section.label}</h4>
+              <span className="text-xs px-2 py-1 bg-gray-200 rounded">{section.type}</span>
+              {!section.visible && <span className="text-xs text-red-500">Hidden</span>}
+            </div>
+            <div className="text-sm text-gray-500 mt-1">
+              {section.type === 'text' && section.data?.heading && <span>Heading: {section.data.heading}</span>}
+              {section.type === 'quote' && section.data?.text && <span>"{section.data.text.substring(0, 50)}..."</span>}
+              {section.type === 'cards' && <span>{section.data?.cards?.length || 0} cards</span>}
+            </div>
           </div>
-        ))}
-      </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setEditingSection(section.id)}
+              className="px-3 py-1 bg-yellow-500 text-white rounded text-sm"
+            >
+              Edit
+            </button>
+            <button
+              onClick={() => handleDeleteSection(section.id)}
+              className="px-3 py-1 bg-red-500 text-white rounded text-sm"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  ))}
+</div>
 
       {/* Add Modal */}
       {showAddModal && (
@@ -736,7 +805,8 @@ export default function AboutPage() {
     
     // Social Links
     youtube_link: "",
-    linkedin_link: ""
+    linkedin_link: "",
+    custom_sections: []
   });
 
   const [heroImage, setHeroImage] = useState(null);
@@ -774,6 +844,7 @@ export default function AboutPage() {
             additional_text: data.additional_text || [],
             top_skills: data.top_skills || [],
             youtube_link: data.youtube_link || "",
+            custom_sections: data.custom_sections || [],
             linkedin_link: data.linkedin_link || ""
           });
           
@@ -915,6 +986,7 @@ export default function AboutPage() {
       formData.append("passion", "");
       formData.append("additional_text", JSON.stringify([]));
       formData.append("top_skills", JSON.stringify([]));
+      formData.append("custom_sections", JSON.stringify([]));
       
       await aboutAPI.updateAbout(formData);
       
@@ -1267,6 +1339,12 @@ export default function AboutPage() {
         .rich-text-editor :global(.ProseMirror p) {
           margin-bottom: 0.75rem;
         }
+           .cursor-grab {
+    cursor: grab;
+  }
+  .cursor-grab:active {
+    cursor: grabbing;
+  }
         .rich-text-editor :global(.ProseMirror ul),
         .rich-text-editor :global(.ProseMirror ol) {
           padding-left: 1.5rem;
