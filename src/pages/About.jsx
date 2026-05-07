@@ -152,21 +152,27 @@ const RichTextEditor = ({ value, onChange, placeholder, height = 300 }) => {
 };
 
 function ImageUpload({ label, onImageChange, existingImage, onRemove }) {
-  const [preview, setPreview] = useState(existingImage || null);
+  const [preview, setPreview] = useState(null);
+  const [removed, setRemoved] = useState(false);  // ← track if user explicitly removed
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       setPreview(URL.createObjectURL(file));
+      setRemoved(false);
       onImageChange?.(file);
     }
   };
 
   const handleRemove = () => {
     setPreview(null);
+    setRemoved(true);  // ← mark as explicitly removed
     onImageChange?.(null);
     if (onRemove) onRemove();
   };
+
+  // Determine what image to show
+  const displayImage = preview || (!removed && existingImage) || null;
 
   return (
     <div>
@@ -184,10 +190,8 @@ function ImageUpload({ label, onImageChange, existingImage, onRemove }) {
             htmlFor={label.replace(/\s/g, '')}
             className="w-full h-[220px] bg-[#e8eaf6] border border-[#c5c8e8] rounded-lg flex items-center justify-center cursor-pointer hover:bg-[#dde0f5] transition-colors overflow-hidden"
           >
-            {preview ? (
-              <img src={preview} alt="Preview" className="w-full h-full object-cover" />
-            ) : existingImage ? (
-              <img src={existingImage} alt="Existing" className="w-full h-full object-cover" />
+            {displayImage ? (
+              <img src={displayImage} alt="Preview" className="w-full h-full object-cover" />
             ) : (
               <div className="text-center">
                 <svg className="w-8 h-8 text-[#7c7fc4] mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -200,8 +204,9 @@ function ImageUpload({ label, onImageChange, existingImage, onRemove }) {
             )}
           </label>
         </div>
-        {(preview || existingImage) && (
+        {displayImage && (
           <button
+            type="button"
             onClick={handleRemove}
             className="px-4 py-2 text-sm text-red-600 hover:text-red-700 font-medium"
           >
