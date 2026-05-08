@@ -392,19 +392,19 @@ const inputClass = "w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm
     }
   };
 
-  const handleUpdateSection = async (id, updates) => {
-    try {
-      await aboutAPI.updateCustomSection(id, updates);
-      const updatedSections = sections.map(s => 
-        s.id === id ? { ...s, ...updates } : s
-      );
-      onSectionsChange(updatedSections);
-      toast.success('Section updated');
-    } catch (error) {
-      console.error('Error updating section:', error);
-      toast.error('Failed to update section');
-    }
-  };
+  const handleUpdateSection = async (id, updates, isFormData = false) => {
+  try {
+    await aboutAPI.updateCustomSection(id, updates, isFormData);
+    // Refresh sections from API to get updated image_url
+    const response = await aboutAPI.getAbout();
+    const data = response.data.data || response.data;
+    onSectionsChange(data.custom_sections || []);
+    toast.success('Section updated');
+  } catch (error) {
+    console.error('Error updating section:', error);
+    toast.error('Failed to update section');
+  }
+};
 
   const handleDeleteSection = async (id) => {
     if (!confirm('Delete this section?')) return;
@@ -436,9 +436,28 @@ const inputClass = "w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm
     const [label, setLabel] = useState(section.label);
     const [visible, setVisible] = useState(section.visible);
 
-    const handleSave = () => {
-      onUpdate(section.id, { label, visible, data: localData });
-      setEditingSection(null);
+   const handleSave = async () => {
+      try {
+        if (localData._imageFile) {
+          // Has a new image — send as FormData
+          const formData = new FormData();
+          formData.append('label', label);
+          formData.append('visible', visible ? '1' : '0');
+          formData.append('image', localData._imageFile);
+
+          const { _imageFile, ...cleanData } = localData;
+          formData.append('data', JSON.stringify(cleanData));
+
+          await onUpdate(section.id, formData);
+        } else {
+          // No image — send as plain JSON
+          await onUpdate(section.id, { label, visible, data: localData });
+        }
+        setEditingSection(null);
+      } catch (err) {
+        console.error(err);
+        toast.error('Failed to save section');
+      }
     };
 
     const renderDataEditor = () => {
@@ -476,18 +495,14 @@ const inputClass = "w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm
     <div className="space-y-3">
       <ImageUpload
         label="Section Image"
-        existingImage={localData.image_url}
-        onImageChange={async (file) => {
+        existingImage={`https://api.osarenemokpae.com/storage/${localData.image_path}`}
+         onImageChange={(file) => {
           if (file) {
-            const formData = new FormData();
-            formData.append('image', file);
-            const response = await aboutAPI.uploadSectionImage(section.id, formData);
-            // Updated to ensure we grab the correct nested data path from your API response
-            setLocalData({ 
-              ...localData, 
-              image_url: response.data.data.data.image_url, 
-              image_path: response.data.data.data.image_path 
-            });
+            // Store file temporarily — uploaded when Save is clicked
+            setLocalData({ ...localData, _imageFile: file });
+          } else {
+            const { _imageFile, ...rest } = localData;
+            setLocalData({ ...rest, image_url: null, image_path: null });
           }
         }}
       />

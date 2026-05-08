@@ -63,7 +63,14 @@ export const aboutAPI = {
     // Custom sections endpoints
   getCustomSections: () => api.get('/about/sections'),
   addCustomSection: (data) => api.post('/about/sections', data),
-  updateCustomSection: (id, data) => api.put(`/about/sections/${id}`, data),
+  updateCustomSection: (id, data) => {
+    if (data instanceof FormData) {
+      return api.post(`/about/sections/${id}`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    }
+    return api.post(`/about/sections/${id}`, data);
+  },
   deleteCustomSection: (id) => api.delete(`/about/sections/${id}`),
   reorderSections: (data) => api.put('/about/sections/reorder', data),
   uploadSectionImage: (id, formData) => api.post(`/about/sections/${id}/image`, formData),
