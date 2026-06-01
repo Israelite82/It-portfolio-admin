@@ -24,6 +24,7 @@ export default function Journals() {
     citationFormat: "",
     visibility: "",
     researchCategory: "",
+    button_link: "",
     featureOnHomepage: false,
   });
 
@@ -66,6 +67,7 @@ export default function Journals() {
       citationFormat: "",
       visibility: "",
       researchCategory: "",
+      button_link: "",
       featureOnHomepage: false,
     });
     setEditingJournal(null);
@@ -87,6 +89,7 @@ export default function Journals() {
       citationFormat: journal.citation_format || "",
       visibility: journal.visibility || "",
       researchCategory: journal.researchCategory || "",
+      button_link: journal.button_link || "",
       featureOnHomepage: journal.feature_homepage || false,
     });
     setEditingJournal(journal);
@@ -108,6 +111,7 @@ export default function Journals() {
       formData.append("doi", form.doi);
       formData.append("volume", form.volume);
       formData.append("issue", form.issue);
+      formData.append("button_link", form.button_link);
       formData.append("publication_year", form.publicationYear);
       formData.append("citation_format", form.citationFormat);
       formData.append("status", "draft");
@@ -150,6 +154,7 @@ export default function Journals() {
     formData.append("doi", form.doi);
     formData.append("volume", form.volume);
     formData.append("issue", form.issue);
+    formData.append("button_link", form.button_link);
     formData.append("publication_year", form.publicationYear);
     formData.append("citation_format", form.citationFormat);
     formData.append("status", "published");

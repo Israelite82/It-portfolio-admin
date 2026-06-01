@@ -167,6 +167,18 @@ export default function JournalForm({
                 id="journalFileInput"
                 type="file"
               />
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                  Button Link
+                </label>
+                <input
+                  type="text"
+                  name="button_link"
+                  value={form.button_link}
+                  onChange={onChange}
+                  className={inputClass}
+                />
+              </div>
             </div>
           </div>
 
