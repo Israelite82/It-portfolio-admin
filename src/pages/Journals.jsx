@@ -99,8 +99,8 @@ export default function Journals() {
   const handleSaveDraft = async () => {
     setLoading(true);
     try {
-      if (!form.title || (!journalFile && view === "add")) {
-        toast.error("Please fill in title and upload a journal file");
+      if (!form.title ) {
+        toast.error("Please fill in title");
         setLoading(false);
         return;
       }
@@ -141,9 +141,10 @@ export default function Journals() {
 
  const handlePublish = async () => {
   setLoading(true);
+  console.log(form)
   try {
-    if (!form.title || (!journalFile && view === "add")) {
-      toast.error("Please fill in title and upload a journal file");
+    if (!form.title) {
+      toast.error("Please fill in title");
       setLoading(false);
       return;
     }
