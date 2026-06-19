@@ -144,7 +144,10 @@ export default function BlogForm({
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1.5">Content</label>
                 <div className="border border-gray-200 rounded-lg overflow-hidden">
-                 
+                  {/*
+                    key forces a full remount (and fresh Quill instance) whenever
+                    the post being edited changes — cleanest way to avoid stale content.
+                  */}
                   <QuillEditor
                     key={view === "edit" ? (editingBlog?.id ?? "edit") : "add"}
                     value={form.content}
