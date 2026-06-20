@@ -119,7 +119,7 @@ export const teachingsAPI = {
 
 // ===== BLOG API =====
 export const blogAPI = {
-  getAll: () => api.get("/blog-posts"),
+  getAll: (page = 1) => api.get(`/blog-posts?page=${page}`),
   getOne: (id) => api.get(`/blog-posts/${id}`),
   create: (data) => api.post("/blog-posts", data),
   update: (id, data) => api.post(`/blog-posts/${id}`, data),

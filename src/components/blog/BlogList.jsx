@@ -1,4 +1,51 @@
-export default function BlogList({ blogs, loading, onEdit, onDelete, onAdd }) {
+export default function BlogList({ 
+  blogs, 
+  loading, 
+  onEdit, 
+  onDelete, 
+  onAdd,
+  currentPage = 1,
+  lastPage = 1,
+  total = 0,
+  perPage = 15,
+  onPageChange 
+}) {
+  // Generate page numbers to display
+  const getPageNumbers = () => {
+    const pages = [];
+    const delta = 2; // Number of pages to show on each side of current page
+    
+    for (let i = 1; i <= lastPage; i++) {
+      if (
+        i === 1 || // First page
+        i === lastPage || // Last page
+        (i >= currentPage - delta && i <= currentPage + delta) // Pages around current
+      ) {
+        pages.push(i);
+      } else if (
+        (i === currentPage - delta - 1 && i > 1) ||
+        (i === currentPage + delta + 1 && i < lastPage)
+      ) {
+        pages.push('...');
+      }
+    }
+    
+    // Remove duplicates and clean up
+    const uniquePages = [];
+    let lastAdded = null;
+    for (const page of pages) {
+      if (page !== lastAdded) {
+        uniquePages.push(page);
+        lastAdded = page;
+      }
+    }
+    
+    return uniquePages;
+  };
+
+  const startItem = (currentPage - 1) * perPage + 1;
+  const endItem = Math.min(currentPage * perPage, total);
+
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
       <div className="bg-white border-b border-gray-200 px-4 sm:px-8 py-5">
@@ -7,9 +54,16 @@ export default function BlogList({ blogs, loading, onEdit, onDelete, onAdd }) {
 
       <div className="px-4 sm:px-8 py-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
-          <p className="text-sm font-semibold text-gray-500 tracking-widest uppercase">
-            All Blog Posts
-          </p>
+          <div>
+            <p className="text-sm font-semibold text-gray-500 tracking-widest uppercase">
+              All Blog Posts
+            </p>
+            {!loading && total > 0 && (
+              <p className="text-xs text-gray-400 mt-1">
+                Showing {startItem}-{endItem} of {total} posts
+              </p>
+            )}
+          </div>
           <button
             onClick={onAdd}
             className="bg-[#6366F1] hover:bg-[#6a5dbf] text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-all w-full sm:w-auto"
@@ -144,6 +198,68 @@ export default function BlogList({ blogs, loading, onEdit, onDelete, onAdd }) {
                 </div>
               )}
             </div>
+
+            {/* PAGINATION */}
+            {total > perPage && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t border-gray-200">
+                <div className="text-sm text-gray-500 order-2 sm:order-1">
+                  Page {currentPage} of {lastPage}
+                </div>
+                
+                <div className="flex items-center gap-1 order-1 sm:order-2">
+                  {/* Previous Button */}
+                  <button
+                    onClick={() => onPageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      currentPage === 1
+                        ? "text-gray-300 cursor-not-allowed"
+                        : "text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+
+                  {/* Page Numbers */}
+                  {getPageNumbers().map((page, index) => (
+                    page === '...' ? (
+                      <span key={`ellipsis-${index}`} className="px-3 py-2 text-sm text-gray-400">
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        key={page}
+                        onClick={() => onPageChange(page)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          page === currentPage
+                            ? "bg-[#6366F1] text-white"
+                            : "text-gray-600 hover:bg-gray-100"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    )
+                  ))}
+
+                  {/* Next Button */}
+                  <button
+                    onClick={() => onPageChange(currentPage + 1)}
+                    disabled={currentPage === lastPage}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      currentPage === lastPage
+                        ? "text-gray-300 cursor-not-allowed"
+                        : "text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>

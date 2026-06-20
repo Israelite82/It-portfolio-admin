@@ -10,6 +10,12 @@ export default function Blog() {
   const [view, setView] = useState("list");
   const [editingBlog, setEditingBlog] = useState(null);
   const [featuredImage, setFeaturedImage] = useState(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [perPage, setPerPage] = useState(15);
 
   const [form, setForm] = useState({
     postTitle: "",
@@ -24,20 +30,37 @@ export default function Blog() {
   });
 
   useEffect(() => {
-    fetchBlogs();
-  }, []);
+    fetchBlogs(currentPage);
+  }, [currentPage]);
 
-  const fetchBlogs = async () => {
+  const fetchBlogs = async (page = 1) => {
     try {
       setLoading(true);
-      const response = await blogAPI.getAll();
-      const blogsData = response.data.data?.data || response.data.data || response.data;
+      const response = await blogAPI.getAll(page);
+      
+      // Access the response structure correctly
+      const responseData = response.data || response;
+      const blogsData = responseData.data || [];
+      const meta = responseData.meta || {};
+      const links = responseData.links || {};
+      
       setBlogs(Array.isArray(blogsData) ? blogsData : []);
+      setCurrentPage(meta.current_page || 1);
+      setLastPage(meta.last_page || 1);
+      setTotal(meta.total || 0);
+      setPerPage(meta.per_page || 15);
     } catch (error) {
       console.error("Error fetching blogs:", error);
       setBlogs([]);
+      toast.error("Failed to load blog posts");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= lastPage) {
+      setCurrentPage(page);
     }
   };
 
@@ -100,7 +123,6 @@ export default function Blog() {
       formData.append("author", form.author);
       formData.append("status", "draft");
       
-      // Convert categories and tags to arrays
       const categoriesArray = form.categories.split(",").map(c => c.trim()).filter(Boolean);
       const tagsArray = form.tags.split(",").map(t => t.trim()).filter(Boolean);
       
@@ -120,7 +142,7 @@ export default function Blog() {
         toast.success("Draft updated!");
       }
 
-      await fetchBlogs();
+      await fetchBlogs(currentPage);
       setView("list");
       setFeaturedImage(null);
     } catch (error) {
@@ -154,12 +176,11 @@ export default function Blog() {
       
       formData.append("categories", JSON.stringify(categoriesArray));
       formData.append("tags", JSON.stringify(tagsArray));
-       formData.append("featured", form.featured ? 1 : 0);
+      formData.append("featured", form.featured ? 1 : 0);
       if (featuredImage) {
         formData.append("featured_image", featuredImage);
       }
-       
-      //use same endpoint for create and update, with _method override for PUT when editing
+
       if (view === "add") {
         await blogAPI.create(formData);
         toast.success("Blog post published!");
@@ -169,7 +190,7 @@ export default function Blog() {
         toast.success("Blog post updated!");
       }
 
-      await fetchBlogs();
+      await fetchBlogs(currentPage);
       setView("list");
       setFeaturedImage(null);
     } catch (error) {
@@ -185,7 +206,7 @@ export default function Blog() {
     try {
       await blogAPI.delete(blogId);
       toast.success("Blog post deleted!");
-      await fetchBlogs();
+      await fetchBlogs(currentPage);
     } catch (error) {
       console.error("Error deleting blog:", error);
       toast.error(error.response?.data?.message || "Failed to delete blog post");
@@ -216,6 +237,11 @@ export default function Blog() {
       onEdit={handleEdit}
       onDelete={handleDelete}
       onAdd={handleAdd}
+      currentPage={currentPage}
+      lastPage={lastPage}
+      total={total}
+      perPage={perPage}
+      onPageChange={handlePageChange}
     />
   );
 }
